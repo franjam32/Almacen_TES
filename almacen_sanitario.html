@@ -497,7 +497,7 @@ async function aiAnalyze(b64,barcode){
   setCS('Consultando Gemini...','an');
   try{
     // Gemini Flash 2.0 - CORS permitido desde browser, gratis 1500 req/dia
-    var url='https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+key;
+    var url='https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key='+key;
     var r=await fetch(url,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
