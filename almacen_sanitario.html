@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0f1a">
+<title>AlmacénTES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<style>
+:root{
+  --bg:#0a0f1a;--surface:#111827;--surface2:#1a2235;--border:#1e3a5f;
+  --accent:#00d4ff;--accent2:#00ff9d;--warn:#ff6b35;--text:#e8f4fd;
+  --text-dim:#6b8aa8;--red:#ff3d5a;
+  --font-display:'Syne',sans-serif;--font-mono:'DM Mono',monospace;
+  --radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);min-height:100dvh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;padding:32px 24px}
+.login-icon{width:72px;height:72px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 0 40px rgba(0,212,255,0.3);margin-bottom:18px}
+.login-title{font-size:2rem;font-weight:800;letter-spacing:-0.03em;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.login-sub{font-family:var(--font-mono);font-size:0.7rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:36px}
+.login-label{font-family:var(--font-mono);font-size:0.7rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:14px}
+.user-cards{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:28px}
+.user-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;text-align:center;cursor:pointer;transition:border-color 0.2s,background 0.2s;min-width:90px}
+.user-card:active,.user-card.selected{border-color:var(--accent);background:rgba(0,212,255,0.08)}
+.user-avatar{font-size:28px;margin-bottom:6px}
+.user-name{font-size:0.8rem;font-weight:700;color:var(--text)}
+.btn-entrar{background:linear-gradient(135deg,var(--accent),#0099cc);color:#0a0f1a;font-family:var(--font-display);font-weight:700;font-size:0.95rem;padding:14px 32px;border-radius:10px;border:none;cursor:pointer;opacity:0.4;pointer-events:none;transition:opacity 0.2s,transform 0.1s;display:flex;align-items:center;gap:8px;width:100%;max-width:320px;justify-content:center}
+.btn-entrar.active{opacity:1;pointer-events:all}
+.btn-entrar:active{transform:scale(0.97)}
+.login-note{margin-top:16px;font-family:var(--font-mono);font-size:0.7rem;color:var(--text-dim);text-align:center;line-height:1.6;display:none}
+
+/* APP */
+#app{display:none;flex-direction:column;min-height:100dvh;position:relative;z-index:1}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.topbar-title{font-size:1rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sync-badge{font-family:var(--font-mono);font-size:0.62rem;padding:3px 8px;border-radius:20px;border:1px solid var(--border);color:var(--text-dim);white-space:nowrap}
+.sync-badge.ok{border-color:var(--accent2);color:var(--accent2)}
+.sync-badge.syncing{border-color:var(--accent);color:var(--accent)}
+.sync-badge.error{border-color:var(--red);color:var(--red)}
+.topbar-actions{display:flex;gap:8px}
+.icon-btn{width:36px;height:36px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;color:var(--text);transition:border-color 0.2s}
+.icon-btn:active{border-color:var(--accent)}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.stat-cell{background:var(--surface);padding:12px 16px;text-align:center}
+.stat-num{font-size:1.4rem;font-weight:800;color:var(--accent);font-family:var(--font-mono);line-height:1}
+.stat-lbl{font-size:0.58rem;font-family:var(--font-mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-top:3px}
+.search-bar{padding:10px 14px;border-bottom:1px solid var(--border)}
+.search-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;color:var(--text);font-family:var(--font-mono);font-size:0.82rem;outline:none}
+.search-input:focus{border-color:var(--accent)}
+.list-area{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px}
+.item-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;display:flex;align-items:flex-start;gap:11px;animation:fadeUp 0.3s ease both;cursor:pointer;transition:border-color 0.2s}
+.item-card:active{border-color:var(--accent)}
+.item-card.expiring{border-left:3px solid var(--warn)}
+.item-card.expired{border-left:3px solid var(--red)}
+.item-thumb{width:44px;height:44px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px}
+.item-thumb img{width:100%;height:100%;object-fit:cover}
+.item-info{flex:1;min-width:0}
+.item-name{font-size:0.87rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-meta{font-family:var(--font-mono);font-size:0.64rem;color:var(--text-dim);margin-top:3px;display:flex;flex-wrap:wrap;gap:5px}
+.tag{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim)}
+.tag.warn{border-color:var(--warn);color:var(--warn)}
+.tag.danger{border-color:var(--red);color:var(--red)}
+.tag.ok{border-color:var(--accent2);color:var(--accent2)}
+.item-qty{font-family:var(--font-mono);font-size:1rem;font-weight:500;color:var(--accent);white-space:nowrap}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px;text-align:center}
+.empty-icon{font-size:44px;opacity:0.4}
+.empty-title{font-size:0.95rem;font-weight:700;color:var(--text-dim)}
+.empty-sub{font-family:var(--font-mono);font-size:0.68rem;color:var(--text-dim);opacity:0.6}
+.fab{position:fixed;bottom:26px;right:22px;width:58px;height:58px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;box-shadow:0 8px 28px rgba(0,212,255,0.4);transition:transform 0.2s;z-index:20;border:none;color:#0a0f1a}
+.fab:active{transform:scale(0.92)}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:100;display:none;flex-direction:column}
+.modal-overlay.open{display:flex}
+.modal-header{padding:18px 18px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:0.95rem;font-weight:700;color:var(--accent)}
+.close-btn{width:34px;height:34px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;color:var(--text);flex-shrink:0}
+.mode-tabs{display:flex;gap:7px;padding:12px 18px;flex-shrink:0}
+.tab-btn{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px;text-align:center;font-family:var(--font-display);font-weight:600;font-size:0.75rem;cursor:pointer;color:var(--text-dim);transition:all 0.2s}
+.tab-btn.active{background:rgba(0,212,255,0.1);border-color:var(--accent);color:var(--accent)}
+
+/* CAMERA */
+.camera-wrap{flex:0 0 200px;position:relative;overflow:hidden;margin:0 18px;border-radius:var(--radius);border:1px solid var(--border);background:#000}
+#scanner-container,#photo-container{position:absolute;inset:0}
+#scanner-container video,#photo-container video{width:100%;height:100%;object-fit:cover}
+#scanner-container canvas{display:none}
+
+/* CAPTURA PREVIEW — se muestra sobre la cámara tras detectar */
+#capture-preview{
+  position:absolute;inset:0;
+  display:none;
+  background:#000;
+  z-index:5;
+}
+#capture-preview img{width:100%;height:100%;object-fit:contain}
+#capture-preview .ai-overlay{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:8px;
+  background:rgba(0,0,0,0.55);
+}
+#capture-preview .ai-label{
+  font-family:var(--font-mono);font-size:0.7rem;
+  color:var(--accent);letter-spacing:0.08em;
+}
+.scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:2}
+.scan-frame{width:210px;height:80px;border:2px solid var(--accent);border-radius:8px;position:relative;box-shadow:0 0 0 9999px rgba(0,0,0,0.45)}
+.scan-line{position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);animation:scanMove 2s ease-in-out infinite;box-shadow:0 0 8px var(--accent)}
+@keyframes scanMove{0%{top:0}50%{top:calc(100% - 2px)}100%{top:0}}
+.photo-crosshair{width:140px;height:140px;border:2px solid rgba(0,255,157,0.7);border-radius:12px}
+.camera-status{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-family:var(--font-mono);font-size:0.63rem;color:var(--text-dim);white-space:nowrap;z-index:6}
+.camera-status.scanning{color:var(--accent);border-color:var(--accent)}
+.camera-status.detected{color:var(--accent2);border-color:var(--accent2)}
+.camera-status.analyzing{color:var(--warn);border-color:var(--warn);animation:pulse 1s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.photo-btn{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:52px;height:52px;background:white;border-radius:50%;border:4px solid rgba(255,255,255,0.3);cursor:pointer;z-index:5;transition:transform 0.1s}
+.photo-btn:active{transform:translateX(-50%) scale(0.91)}
+
+/* FOTO PREVIEW en formulario */
+.foto-preview-wrap{
+  position:relative;
+  width:100%;height:90px;
+  border-radius:8px;overflow:hidden;
+  border:1px solid var(--border);
+  background:var(--surface2);
+  display:none;
+  flex-shrink:0;
+}
+.foto-preview-wrap.visible{display:block}
+.foto-preview-wrap img{width:100%;height:100%;object-fit:cover}
+.foto-preview-wrap .foto-badge{
+  position:absolute;top:6px;right:6px;
+  background:rgba(0,0,0,0.7);border:1px solid var(--accent2);
+  color:var(--accent2);border-radius:6px;
+  font-family:var(--font-mono);font-size:0.58rem;padding:2px 7px;
+}
+.foto-preview-wrap .foto-remove{
+  position:absolute;top:6px;left:6px;
+  width:24px;height:24px;background:rgba(0,0,0,0.7);border:1px solid var(--red);
+  color:var(--red);border-radius:6px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:12px;
+}
+
+/* FORM */
+.form-area{padding:10px 18px;display:flex;flex-direction:column;gap:9px;overflow-y:auto;flex:1;min-height:0}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.field-block{display:flex;flex-direction:column}
+label{font-size:0.68rem;font-family:var(--font-mono);color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;display:block;margin-bottom:5px}
+input[type="text"]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:var(--font-mono);font-size:0.83rem;outline:none;transition:border-color 0.2s}
+input[type="text"]:focus{border-color:var(--accent)}
+.barcode-detected{background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.3);border-radius:8px;padding:8px 12px;font-family:var(--font-mono);font-size:0.7rem;color:var(--accent);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.ai-result-bar{background:rgba(0,255,157,0.06);border:1px solid rgba(0,255,157,0.2);border-radius:8px;padding:8px 12px;font-family:var(--font-mono);font-size:0.68rem;color:var(--accent2);display:none;flex-shrink:0}
+.ai-result-bar.visible{display:block}
+.action-row{padding:10px 18px 24px;display:flex;gap:9px;flex-shrink:0}
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;background:linear-gradient(135deg,var(--accent),#0099cc);color:#0a0f1a;font-family:var(--font-display);font-weight:700;font-size:0.88rem;padding:13px 20px;border-radius:8px;border:none;cursor:pointer;width:100%;transition:opacity 0.2s,transform 0.1s}
+.btn:active{transform:scale(0.97);opacity:0.9}
+.btn.secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn.danger{background:linear-gradient(135deg,var(--red),#cc0022);color:white}
+
+/* DETAIL */
+#detail-modal .modal-body{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px}
+.detail-thumb{width:100%;height:150px;background:var(--surface2);border-radius:var(--radius);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:44px;border:1px solid var(--border)}
+.detail-thumb img{width:100%;height:100%;object-fit:cover}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.detail-field{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:11px}
+.detail-field.full{grid-column:1/-1}
+.detail-field-lbl{font-family:var(--font-mono);font-size:0.58rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px}
+.detail-field-val{font-size:0.88rem;font-weight:600;color:var(--text)}
+
+/* TOAST / LOADING */
+.toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:9px 18px;font-family:var(--font-mono);font-size:0.73rem;color:var(--text);opacity:0;transition:all 0.3s;z-index:1000;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{border-color:var(--accent2);color:var(--accent2)}
+.toast.error{border-color:var(--red);color:var(--red)}
+#loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:200}
+#loading-overlay.show{display:flex}
+.loading-text{font-family:var(--font-mono);font-size:0.78rem;color:var(--accent)}
+.spinner{width:18px;height:18px;border:2px solid rgba(0,212,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block}
+.spinner-lg{width:34px;height:34px;border-width:3px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-icon">🏥</div>
+  <div class="login-title">AlmacénTES</div>
+  <div class="login-sub">Gestión de material sanitario</div>
+  <div class="login-label">¿Quién registra?</div>
+  <div class="user-cards">
+    <div class="user-card" onclick="seleccionarUsuario('Fran',this)">
+      <div class="user-avatar">👨‍⚕️</div><div class="user-name">Fran</div>
+    </div>
+    <div class="user-card" onclick="seleccionarUsuario('Julio',this)">
+      <div class="user-avatar">👨‍🏫</div><div class="user-name">Julio</div>
+    </div>
+    <div class="user-card" onclick="seleccionarUsuario('Tere',this)">
+      <div class="user-avatar">👩‍⚕️</div><div class="user-name">Tere</div>
+    </div>
+  </div>
+  <button class="btn-entrar" id="btnEntrar" onclick="entrar()">Entrar con Google</button>
+  <div class="login-note" id="loginNote">
+    Conectando con Google…<br>
+    <span style="font-size:10px;opacity:0.7">Se abrirá una ventana para autorizar acceso al Sheet</span>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">AlmacénTES</div>
+      <div class="sync-badge" id="syncBadge">—</div>
+    </div>
+    <div class="topbar-actions">
+      <div class="icon-btn" id="syncUser">👤</div>
+      <div class="icon-btn" onclick="sincronizar()">🔄</div>
+    </div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-cell"><div class="stat-num" id="stat-total">0</div><div class="stat-lbl">Artículos</div></div>
+    <div class="stat-cell"><div class="stat-num" id="stat-stock" style="color:var(--accent2)">0</div><div class="stat-lbl">Unidades</div></div>
+    <div class="stat-cell"><div class="stat-num" id="stat-exp" style="color:var(--warn)">0</div><div class="stat-lbl">Caducan pronto</div></div>
+  </div>
+  <div class="search-bar">
+    <input class="search-input" type="search" id="search-input" placeholder="🔍  Buscar material…" oninput="filterItems()">
+  </div>
+  <div class="list-area" id="item-list">
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">📦</div>
+      <div class="empty-title">Almacén vacío</div>
+      <div class="empty-sub">Pulsa + para añadir material</div>
+    </div>
+  </div>
+  <button class="fab" onclick="openScanModal()">+</button>
+</div>
+
+<!-- SCAN MODAL -->
+<div id="scan-modal" class="modal-overlay">
+  <div class="modal-header">
+    <div class="modal-title">📷 Registrar material</div>
+    <div class="close-btn" onclick="closeScanModal()">✕</div>
+  </div>
+  <div class="mode-tabs">
+    <div class="tab-btn active" id="tab-barcode" onclick="switchMode('barcode')">📊 Código+IA</div>
+    <div class="tab-btn" id="tab-photo" onclick="switchMode('photo')">📸 Foto IA</div>
+    <div class="tab-btn" id="tab-manual" onclick="switchMode('manual')">✏️ Manual</div>
+  </div>
+
+  <!-- CÁMARA -->
+  <div class="camera-wrap" id="camera-wrap">
+    <!-- Barcode scanner stream -->
+    <div id="scanner-container">
+      <div id="interactive" class="viewport"></div>
+    </div>
+    <!-- Overlay encuadre barcode -->
+    <div class="scan-overlay" id="scan-overlay">
+      <div class="scan-frame"><div class="scan-line"></div></div>
+    </div>
+    <!-- Photo mode -->
+    <div id="photo-container" style="display:none">
+      <video id="photo-video" autoplay playsinline muted></video>
+      <canvas id="photo-canvas" style="display:none"></canvas>
+      <div class="scan-overlay"><div class="photo-crosshair"></div></div>
+      <button class="photo-btn" onclick="capturePhoto()"></button>
+    </div>
+    <!-- Preview captura automática post-barcode -->
+    <div id="capture-preview">
+      <img id="capture-img" src="" alt="">
+      <div class="ai-overlay">
+        <div class="spinner"></div>
+        <div class="ai-label" id="ai-overlay-label">Analizando con IA…</div>
+      </div>
+    </div>
+    <div class="camera-status" id="camera-status">Iniciando…</div>
+  </div>
+
+  <!-- INFO BAJO CÁMARA -->
+  <div style="padding:0 18px;margin-top:8px;display:flex;flex-direction:column;gap:7px;flex-shrink:0">
+    <div class="barcode-detected" id="barcode-info" style="display:none">
+      <span>📊</span><span id="barcode-value">—</span>
+    </div>
+    <div class="foto-preview-wrap" id="foto-preview-wrap">
+      <img id="foto-preview-img" src="" alt="">
+      <div class="foto-badge">📷 Foto guardada</div>
+      <div class="foto-remove" onclick="clearFoto()" title="Quitar foto">✕</div>
+    </div>
+    <div class="ai-result-bar" id="ai-result-bar">🤖 <span id="ai-result-text"></span></div>
+  </div>
+
+  <!-- FORMULARIO -->
+  <div class="form-area">
+    <div class="field-block">
+      <label>Nombre / descripción *</label>
+      <input type="text" id="f-nombre" placeholder="Ej: Mascarilla FFP2, Guantes nitrilo L…">
+    </div>
+    <div class="form-row">
+      <div class="field-block">
+        <label>Cantidad *</label>
+        <input type="text" id="f-cantidad" placeholder="50">
+      </div>
+      <div class="field-block">
+        <label>Ubicación</label>
+        <input type="text" id="f-ubicacion" placeholder="Estante A2">
+      </div>
+    </div>
+    <div class="field-block">
+      <label>Fecha caducidad</label>
+      <input type="text" id="f-caducidad" placeholder="12/2026">
+    </div>
+  </div>
+
+  <div class="action-row">
+    <button class="btn secondary" style="flex:0.4" onclick="clearForm()">Limpiar</button>
+    <button class="btn" style="flex:1" onclick="saveItem()">💾 Guardar</button>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div id="detail-modal" class="modal-overlay">
+  <div class="modal-header">
+    <div class="modal-title">📋 Detalle</div>
+    <div class="close-btn" onclick="closeDetailModal()">✕</div>
+  </div>
+  <div class="modal-body" id="detail-body"></div>
+  <div class="action-row">
+    <button class="btn danger" style="flex:0.5" id="delete-btn">🗑 Eliminar</button>
+    <button class="btn secondary" style="flex:1" id="edit-btn">✏️ Editar</button>
+  </div>
+</div>
+
+<div id="loading-overlay">
+  <div class="spinner spinner-lg"></div>
+  <div class="loading-text" id="loading-text">Procesando…</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// -------
+// CONFIG
+// -------
+const CLIENT_ID  = '756258617711-pqe3js4qqshdsfmr7of7d3ga0r6r9kd9.apps.googleusercontent.com';
+const SHEET_ID   = '1Sr9LxAKWEaNZ177qaxEXaot_lyDunYHbTpdk3IZSYuc';
+const CLAUDE_KEY = '';   // &#x2190; Pega aquí tu sk-ant-...
+const TAB        = 'Inventario';
+const SCOPES     = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+const DISCOVERY_SHEETS = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+const DISCOVERY_DRIVE  = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+// Columnas Sheet: A=ID B=Nombre C=Cantidad D=Caducidad E=Ubicación F=Código G=Timestamp H=Autor I=Foto_URL J=Foto_Miniatura
+const HEADERS    = ['ID','Nombre','Cantidad','Caducidad','Ubicación','Código','Timestamp','Autor','Foto_URL','Foto_Miniatura'];
+
+// -------
+// STATE
+// -------
+let ITEMS = [];
+let usuarioActual = '';
+let gapiOk = false, gisOk = false, tokenClient = null, syncTimer = null;
+let currentMode = 'barcode';
+let photoStream = null;
+let quaggaRunning = false;
+let lastBarcode = '';
+let capturedPhotoB64 = null;   // foto actual en memoria
+
+// -------
+// LOGIN - mismo patrón que cursos_formativos2
+// -------
+function seleccionarUsuario(nombre, el) {
+  usuarioActual = nombre;
+  document.querySelectorAll('.user-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('btnEntrar').classList.add('active');
+}
+
+function entrar() {
+  if (!usuarioActual) return;
+  document.getElementById('loginNote').style.display = 'block';
+  document.getElementById('btnEntrar').innerHTML = '<span class="spinner"></span> Conectando...';
+  const s1 = document.createElement('script');
+  s1.src = 'https://apis.google.com/js/api.js';
+  s1.onload = () => { gapi.load('client', async () => { await gapi.client.init({ discoveryDocs:[DISCOVERY_SHEETS, DISCOVERY_DRIVE] }); gapiOk=true; intentarAuth(); }); };
+  document.head.appendChild(s1);
+  const s2 = document.createElement('script');
+  s2.src = 'https://accounts.google.com/gsi/client';
+  s2.onload = () => {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID, scope: SCOPES,
+      callback: async (resp) => {
+        if (resp.error) { setSyncError('Error auth'); resetLogin(); return; }
+        mostrarApp(); await cargarSheet(); iniciarAutoSync();
+      },
+    });
+    gisOk=true; intentarAuth();
+  };
+  document.head.appendChild(s2);
+}
+
+function intentarAuth() { if (gapiOk && gisOk) tokenClient.requestAccessToken({ prompt:'select_account' }); }
+function resetLogin() { document.getElementById('btnEntrar').innerHTML='Entrar con Google'; document.getElementById('btnEntrar').classList.add('active'); }
+function mostrarApp() {
+  document.getElementById('loginScreen').style.display='none';
+  const app=document.getElementById('app'); app.style.display='flex'; app.style.flexDirection='column';
+  document.getElementById('syncUser').textContent='👤 '+usuarioActual.charAt(0);
+  setSyncSyncing('Cargando...');
+}
+
+// -------
+// GOOGLE SHEETS - gapi.client (igual que cursos_formativos2)
+// -------
+async function cargarSheet() {
+  setSyncSyncing('Sincronizando...');
+  try {
+    await ensureTabExists();
+    const r = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId:SHEET_ID, range:`${TAB}!A:J` });
+    const rows = r.result.values || [];
+    if (rows.length <= 1) { ITEMS=[]; renderList(); updateStats(); setSyncOk('Sin datos aún'); return; }
+    ITEMS = rows.slice(1).filter(r=>r&&r[1]).map((r,i)=>({
+      _row:i+2,
+      ID:r[0]||'', Nombre:r[1]||'', Cantidad:r[2]||'',
+      Caducidad:r[3]||'', Ubicación:r[4]||'', Código:r[5]||'',
+      Timestamp:r[6]||'', Autor:r[7]||'',
+      _photoUrl: r[8]||'',  // URL de Drive
+      _photo: r[8]||''      // misma URL - se usa para mostrar en app
+    }));
+    renderList(); updateStats();
+    setSyncOk('Act. '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}));
+  } catch(e) { console.error(e); setSyncError('Error al leer'); }
+}
+
+async function ensureTabExists() {
+  const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId:SHEET_ID });
+  if (!meta.result.sheets?.some(s=>s.properties.title===TAB)) {
+    await gapi.client.sheets.spreadsheets.batchUpdate({ spreadsheetId:SHEET_ID, resource:{requests:[{addSheet:{properties:{title:TAB}}}]} });
+    await gapi.client.sheets.spreadsheets.values.update({ spreadsheetId:SHEET_ID, range:`${TAB}!A1:I1`, valueInputOption:'USER_ENTERED', resource:{values:[HEADERS]} });
+    // Añadir fórmula IMAGE en J2 para mostrar foto al añadir primera fila
+
+  }
+}
+
+function toRow(item) {
+  // I = URL de Drive, J = fórmula IMAGE() para ver la foto en la celda
+  const fotoUrl = item._photoUrl || '';
+  const fotoFormula = fotoUrl ? `=IMAGE("${fotoUrl}",4,80,80)` : '';
+  return [item.ID, item.Nombre, item.Cantidad, item.Caducidad,
+          item.Ubicación, item.Código,
+          item.Timestamp||new Date().toLocaleString('es-ES'),
+          item.Autor||usuarioActual,
+          fotoUrl,
+          fotoFormula];
+}
+
+async function getSheetTabId() {
+  const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId:SHEET_ID });
+  return meta.result.sheets.find(s=>s.properties.title===TAB)?.properties.sheetId??0;
+}
+
+
+// -------
+// SUBIR FOTO A GOOGLE DRIVE
+// -------
+async function uploadPhotoToDrive(b64, filename) {
+  const token = gapi.client.getToken();
+  const boundary = 'almacentes_foto_boundary';
+  const CRLF = '\r\n';
+
+  // Construir cuerpo multipart con strings normales (sin template literals)
+  const metaJson = JSON.stringify({ name: filename, mimeType: 'image/jpeg' });
+  const body =
+    '--' + boundary + CRLF +
+    'Content-Type: application/json' + CRLF + CRLF +
+    metaJson + CRLF +
+    '--' + boundary + CRLF +
+    'Content-Type: image/jpeg' + CRLF +
+    'Content-Transfer-Encoding: base64' + CRLF + CRLF +
+    b64 + CRLF +
+    '--' + boundary + '--';
+
+  const uploadRes = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token.access_token,
+        'Content-Type': 'multipart/related; boundary=' + boundary,
+      },
+      body: body
+    }
+  );
+
+  if (!uploadRes.ok) {
+    const err = await uploadRes.json();
+    throw new Error('Drive: ' + (err.error?.message || uploadRes.status));
+  }
+
+  const file = await uploadRes.json();
+
+  // Hacer el archivo público para que IMAGE() en Sheets pueda cargarlo
+  await fetch('https://www.googleapis.com/drive/v3/files/' + file.id + '/permissions', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + token.access_token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ role: 'reader', type: 'anyone' })
+  });
+
+  const directUrl = 'https://drive.google.com/uc?export=view&id=' + file.id;
+  return { fileId: file.id, url: directUrl };
+}
+
+async function appendItemToSheet(item) {
+  await gapi.client.sheets.spreadsheets.values.append({
+    spreadsheetId:SHEET_ID, range:`${TAB}!A:J`,
+    valueInputOption:'USER_ENTERED', insertDataOption:'INSERT_ROWS',
+    resource:{values:[toRow(item)]},
+  });
+}
+
+async function deleteItemFromSheet(rowIndex) {
+  const sheetId = await getSheetTabId();
+  await gapi.client.sheets.spreadsheets.batchUpdate({
+    spreadsheetId:SHEET_ID,
+    resource:{requests:[{deleteDimension:{range:{sheetId,dimension:'ROWS',startIndex:rowIndex-1,endIndex:rowIndex}}}]}
+  });
+}
+
+function iniciarAutoSync() { if(syncTimer) clearInterval(syncTimer); syncTimer=setInterval(cargarSheet,30000); }
+async function sincronizar() { await cargarSheet(); }
+
+// -------
+// SYNC BADGE
+// -------
+function setSyncOk(msg)      { const b=document.getElementById('syncBadge'); b.textContent='&#x2713; '+msg; b.className='sync-badge ok'; }
+function setSyncSyncing(msg) { const b=document.getElementById('syncBadge'); b.textContent='&#x27F3; '+msg; b.className='sync-badge syncing'; }
+function setSyncError(msg)   { const b=document.getElementById('syncBadge'); b.textContent='&#x2715; '+msg; b.className='sync-badge error'; }
+
+// -------
+// SCAN MODAL
+// -------
+function openScanModal()  { document.getElementById('scan-modal').classList.add('open'); switchMode('barcode'); }
+function closeScanModal() { document.getElementById('scan-modal').classList.remove('open'); stopCamera(); stopQuagga(); clearForm(); }
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+mode).classList.add('active');
+  const scanC=document.getElementById('scanner-container');
+  const photoC=document.getElementById('photo-container');
+  const scanO=document.getElementById('scan-overlay');
+  const camW=document.getElementById('camera-wrap');
+  stopCamera(); stopQuagga();
+  hideCapturePreview();
+  if (mode==='barcode') {
+    camW.style.display=''; scanC.style.display=''; photoC.style.display='none'; scanO.style.display='';
+    startQuagga();
+  } else if (mode==='photo') {
+    camW.style.display=''; scanC.style.display='none'; photoC.style.display=''; scanO.style.display='none';
+    startPhotoCamera();
+  } else {
+    camW.style.display='none';
+  }
+}
+
+// -------
+// BARCODE SCANNER &#x2192; captura automática &#x2192; IA
+// -------
+function startQuagga() {
+  if (quaggaRunning) return;
+  setStatus('Apunta al código de barras...','');
+  Quagga.init({
+    inputStream:{
+      name:'Live', type:'LiveStream',
+      target: document.querySelector('#interactive'),
+      constraints:{ facingMode:'environment', width:{ideal:1280}, height:{ideal:720} }
+    },
+    decoder:{ readers:['ean_reader','ean_8_reader','code_128_reader','code_39_reader','upc_reader'] },
+    locate:true
+  }, err=>{
+    if (err) { setStatus('Error cámara',''); return; }
+    Quagga.start(); quaggaRunning=true; setStatus('Escaneando...','scanning');
+  });
+  Quagga.onDetected(onBarcodeDetected);
+}
+
+function stopQuagga() {
+  if (!quaggaRunning) return;
+  Quagga.offDetected(onBarcodeDetected);
+  Quagga.stop(); quaggaRunning=false;
+}
+
+async function onBarcodeDetected(result) {
+  const code = result.codeResult.code;
+  if (code === lastBarcode) return;
+  lastBarcode = code;
+  if (navigator.vibrate) navigator.vibrate([80,30,80]);
+
+  // 1. Parar escáner y mostrar código
+  stopQuagga();
+  setStatus('¡Código detectado!','detected');
+  document.getElementById('barcode-info').style.display='flex';
+  document.getElementById('barcode-value').textContent = code;
+
+  // 2. Capturar frame del vídeo de QuaggaJS y recortar zona central
+  const b64 = captureFrameFromQuagga();
+  if (!b64) {
+    setStatus('Sin imagen de cámara','');
+    checkExistingByBarcode(code);
+    return;
+  }
+
+  // 3. Mostrar preview con spinner de análisis
+  showCapturePreview(b64, 'Analizando con IA...');
+  setStatus('🤖 Identificando...','analyzing');
+
+  // 4. Si ya existe en inventario, autocompletar y salir
+  if (checkExistingByBarcode(code)) {
+    hideCapturePreview();
+    setPhotoPreview(b64);
+    capturedPhotoB64 = b64;
+    return;
+  }
+
+  // 5. Llamar a Claude con la imagen recortada
+  if (CLAUDE_KEY) {
+    const croppedB64 = cropCenter(b64, 480, 480);
+    await identifyWithClaude(croppedB64, code);
+  } else {
+    hideCapturePreview();
+    setPhotoPreview(b64);
+    capturedPhotoB64 = b64;
+    setStatus('Código OK - introduce el nombre','detected');
+    document.getElementById('f-nombre').focus();
+  }
+}
+
+function captureFrameFromQuagga() {
+  // Captura frame y lo comprime a &#x2264;320px para caber en celda de Sheets (límite 50k chars)
+  try {
+    const video = document.querySelector('#interactive video');
+    if (!video || video.readyState < 2) return null;
+    const srcW = video.videoWidth || 640;
+    const srcH = video.videoHeight || 480;
+    // Tamaño máximo: 320px en el lado mayor
+    const MAX = 320;
+    const scale = Math.min(MAX / srcW, MAX / srcH, 1);
+    const w = Math.round(srcW * scale);
+    const h = Math.round(srcH * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+    return canvas.toDataURL('image/jpeg', 0.45).split(',')[1];
+  } catch(e) { console.warn('captureFrame error:', e); return null; }
+}
+
+// Recorta un cuadrado centrado de la imagen (para enviar a IA sin márgenes vacíos)
+function cropCenter(b64, w, h) {
+  // Recorta el centro y comprime para IA (puede ser mayor calidad que para Sheet)
+  try {
+    const img = new Image();
+    img.src = 'data:image/jpeg;base64,' + b64;
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    const srcW = img.naturalWidth || img.width;
+    const srcH = img.naturalHeight || img.height;
+    if (!srcW || !srcH) return b64;
+    const scale = Math.max(w/srcW, h/srcH);
+    const drawW = srcW * scale, drawH = srcH * scale;
+    ctx.drawImage(img, (w-drawW)/2, (h-drawH)/2, drawW, drawH);
+    return canvas.toDataURL('image/jpeg', 0.80).split(',')[1];
+  } catch(e) { return b64; }
+}
+
+// Comprime imagen para guardar en Sheet (máx ~30KB &#x2192; cabe en celda de 50k chars)
+function compressForSheet(b64) {
+  try {
+    const img = new Image();
+    img.src = 'data:image/jpeg;base64,' + b64;
+    const MAX = 280;
+    const srcW = img.naturalWidth || img.width || 320;
+    const srcH = img.naturalHeight || img.height || 240;
+    const scale = Math.min(MAX/srcW, MAX/srcH, 1);
+    const w = Math.round(srcW*scale), h = Math.round(srcH*scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    const compressed = canvas.toDataURL('image/jpeg', 0.40).split(',')[1];
+    console.log(`Foto comprimida: ${Math.round(compressed.length/1024)}KB (límite Sheet ~37KB)`);
+    return compressed;
+  } catch(e) { return b64; }
+}
+
+function checkExistingByBarcode(code) {
+  const existing = ITEMS.find(it => it.Código === code);
+  if (existing) {
+    document.getElementById('f-nombre').value = existing.Nombre;
+    document.getElementById('f-ubicacion').value = existing.Ubicación||'';
+    showToast('📦 Artículo ya en inventario - datos cargados','success');
+    setStatus('Artículo reconocido','detected');
+    return true;
+  }
+  return false;
+}
+
+// -------
+// IDENTIFICACIÓN IA (barcode mode y photo mode)
+// -------
+async function identifyWithClaude(b64, codigoBarras) {
+  try {
+    const contextMsg = codigoBarras
+      ? `El código de barras detectado es: ${codigoBarras}. Usa ese dato como pista adicional para identificar el producto.`
+      : '';
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':CLAUDE_KEY,'anthropic-version':'2023-06-01'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:400,
+        messages:[{ role:'user', content:[
+          { type:'image', source:{type:'base64', media_type:'image/jpeg', data:b64} },
+          { type:'text', text:'Eres experto en material sanitario de emergencias (TES/061/SVB). Analiza la imagen y proporciona el nombre exacto del producto sanitario que ves. ' + contextMsg + ' Responde ÚNICAMENTE con JSON válido sin backticks ni texto adicional: { "nombre": "Nombre comercial o técnico preciso del producto", "categoria": "Protección|Venopunción|Vía aérea|Inmovilización|Monitorización|Medicación|Diagnóstico|Otros", "confianza": "alta|media|baja", "caducidad_visible": "MM/YYYY si se ve en la imagen si no vacío", "notas": "observación muy breve opcional" }' }
+        ]}]
+      })
+    });
+
+    const data = await res.json();
+    const text = (data.content?.[0]?.text||'').replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(text);
+
+    // Rellenar formulario
+    document.getElementById('f-nombre').value = parsed.nombre || '';
+    if (parsed.caducidad_visible) document.getElementById('f-caducidad').value = parsed.caducidad_visible;
+
+    // Mostrar resultado IA
+    const bar = document.getElementById('ai-result-bar');
+    bar.classList.add('visible');
+    document.getElementById('ai-result-text').textContent =
+      `${parsed.nombre} · ${parsed.categoria} · confianza ${parsed.confianza}${parsed.notas?' - '+parsed.notas:''}`;
+
+    setStatus('&#x2705; Identificado por IA','detected');
+    hideCapturePreview();
+    setPhotoPreview(b64);
+    capturedPhotoB64 = b64;
+
+  } catch(e) {
+    console.error('Claude error:', e);
+    setStatus('No identificado - introduce el nombre','');
+    hideCapturePreview();
+    if (capturedPhotoB64) setPhotoPreview(capturedPhotoB64);
+    document.getElementById('f-nombre').focus();
+  }
+}
+
+// -------
+// PHOTO MODE (captura manual)
+// -------
+async function startPhotoCamera() {
+  setStatus('Iniciando cámara...','');
+  try {
+    photoStream = await navigator.mediaDevices.getUserMedia({ video:{facingMode:'environment',width:{ideal:1280}} });
+    document.getElementById('photo-video').srcObject = photoStream;
+    setStatus('Encuadra y captura','');
+  } catch(e) { setStatus('Sin acceso a cámara',''); switchMode('manual'); }
+}
+
+function stopCamera() {
+  if (photoStream) { photoStream.getTracks().forEach(t=>t.stop()); photoStream=null; }
+}
+
+async function capturePhoto() {
+  const video=document.getElementById('photo-video');
+  const canvas=document.getElementById('photo-canvas');
+  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  canvas.getContext('2d').drawImage(video,0,0);
+  const b64=canvas.toDataURL('image/jpeg',0.82).split(',')[1];
+  capturedPhotoB64=b64;
+  setPhotoPreview(b64);
+
+  if (CLAUDE_KEY) {
+    showCapturePreview(b64,'Analizando con IA...');
+    setStatus('🤖 Identificando...','analyzing');
+    await identifyWithClaude(b64, null);
+  } else {
+    setStatus('Foto capturada','detected');
+    document.getElementById('f-nombre').focus();
+  }
+}
+
+// -------
+// PREVIEW UI HELPERS
+// -------
+function showCapturePreview(b64, label) {
+  const el = document.getElementById('capture-preview');
+  document.getElementById('capture-img').src = 'data:image/jpeg;base64,' + b64;
+  document.getElementById('ai-overlay-label').textContent = label;
+  el.style.display = 'block';
+}
+
+function hideCapturePreview() {
+  document.getElementById('capture-preview').style.display = 'none';
+}
+
+function setPhotoPreview(b64) {
+  const wrap = document.getElementById('foto-preview-wrap');
+  document.getElementById('foto-preview-img').src = 'data:image/jpeg;base64,' + b64;
+  wrap.classList.add('visible');
+}
+
+function clearFoto() {
+  capturedPhotoB64 = null;
+  document.getElementById('foto-preview-wrap').classList.remove('visible');
+  document.getElementById('foto-preview-img').src='';
+}
+
+// -------
+// GUARDAR ITEM
+// -------
+async function saveItem() {
+  const nombre=document.getElementById('f-nombre').value.trim();
+  const cantidad=document.getElementById('f-cantidad').value.trim();
+  const ubicacion=document.getElementById('f-ubicacion').value.trim();
+  const caducidad=document.getElementById('f-caducidad').value.trim();
+  if (!nombre)   { showToast('El nombre es obligatorio','error'); return; }
+  if (!cantidad) { showToast('La cantidad es obligatoria','error'); return; }
+
+  const item = {
+    ID: 'TES-'+Date.now().toString(36).toUpperCase(),
+    Nombre: nombre, Cantidad: cantidad,
+    Caducidad: caducidad, Ubicación: ubicacion,
+    Código: document.getElementById('barcode-info').style.display!=='none'
+            ? document.getElementById('barcode-value').textContent : '',
+    Timestamp: new Date().toLocaleString('es-ES'),
+    Autor: usuarioActual,
+    _row: ITEMS.length+2,
+    _photoUrl: '',
+    _photo: ''
+  };
+
+  showLoading('Guardando en Google Sheets...');
+  try {
+    // Subir foto a Drive si existe
+    if (capturedPhotoB64) {
+      showLoading('Subiendo foto a Google Drive...');
+      try {
+        const fname = `almacen_${item.ID}_${Date.now()}.jpg`;
+        const driveResult = await uploadPhotoToDrive(capturedPhotoB64, fname);
+        item._photoUrl = driveResult.url;
+        item._photo    = driveResult.url;  // para mostrar en app via <img src>
+      } catch(driveErr) {
+        console.warn('Drive upload failed, guardando sin foto:', driveErr);
+        showToast('&#x26A0;️ Foto no subida: ' + driveErr.message, 'error');
+      }
+      showLoading('Guardando en Google Sheets...');
+    }
+    await appendItemToSheet(item);
+    ITEMS.push(item);
+    renderList(); updateStats();
+    setSyncOk('Guardado');
+    showToast(`&#x2705; Guardado${capturedPhotoB64?' con foto':''} · ${usuarioActual}`,'success');
+    closeScanModal();
+  } catch(e) {
+    showToast('Error: '+e.message,'error');
+    setSyncError('Error al guardar');
+  }
+  hideLoading();
+}
+
+// -------
+// RENDER LISTA
+// -------
+function renderList() {
+  const list=document.getElementById('item-list'), empty=document.getElementById('empty-state');
+  const query=(document.getElementById('search-input')?.value||'').toLowerCase();
+  list.querySelectorAll('.item-card').forEach(el=>el.remove());
+  const filtered=ITEMS.filter(it=>!query||it.Nombre?.toLowerCase().includes(query)||it.Código?.toLowerCase().includes(query)||it.Ubicación?.toLowerCase().includes(query));
+  if (!filtered.length) { empty.style.display='flex'; return; }
+  empty.style.display='none';
+  const today=new Date();
+  filtered.forEach((item,idx)=>{
+    const es=getExpiryStatus(item.Caducidad,today);
+    const card=document.createElement('div');
+    card.className='item-card'+(es==='expired'?' expired':es==='expiring'?' expiring':'');
+    card.style.animationDelay=(idx*0.04)+'s';
+    const imgSrc = item._photo
+      ? (item._photo.startsWith('http') ? item._photo : 'data:image/jpeg;base64,'+item._photo)
+      : null;
+    const thumb = imgSrc
+      ?`<div class="item-thumb"><img src="${imgSrc}" alt="" loading="lazy"></div>`
+      :`<div class="item-thumb">${getCategoryEmoji(item.Nombre)}</div>`;
+    const expiryTag=item.Caducidad?`<span class="tag ${es==='expired'?'danger':es==='expiring'?'warn':'ok'}">📅 ${item.Caducidad}</span>`:'';
+    const locTag=item.Ubicación?`<span class="tag">📍 ${item.Ubicación}</span>`:'';
+    const fotoTag=item._photo?`<span class="tag" style="border-color:rgba(0,212,255,0.3);color:var(--accent)">📷</span>`:'';
+    card.innerHTML=`${thumb}<div class="item-info"><div class="item-name">${item.Nombre}</div><div class="item-meta">${locTag}${expiryTag}${fotoTag}</div></div><div class="item-qty">${item.Cantidad}<span style="font-size:0.6rem;color:var(--text-dim)"> ud</span></div>`;
+    card.onclick=()=>showDetail(ITEMS.indexOf(item));
+    list.appendChild(card);
+  });
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent=ITEMS.length;
+  document.getElementById('stat-stock').textContent=ITEMS.reduce((s,i)=>s+(parseInt(i.Cantidad)||0),0);
+  const today=new Date();
+  document.getElementById('stat-exp').textContent=ITEMS.filter(i=>{const s=getExpiryStatus(i.Caducidad,today);return s==='expiring'||s==='expired';}).length;
+}
+
+function filterItems() { renderList(); }
+
+function getExpiryStatus(cad,today) {
+  if (!cad) return 'none';
+  const p=cad.split('/'); if(p.length<2) return 'none';
+  const exp=new Date(parseInt(p[1]),parseInt(p[0]),0);
+  const d=(exp-today)/86400000;
+  return d<0?'expired':d<90?'expiring':'ok';
+}
+
+function getCategoryEmoji(name) {
+  if (!name) return '📦'; const n=name.toLowerCase();
+  if (n.includes('mascarilla')||n.includes('ffp')) return '😷';
+  if (n.includes('guante')) return '🧤';
+  if (n.includes('jeringa')||n.includes('aguja')||n.includes('catéter')) return '💉';
+  if (n.includes('venda')||n.includes('gasa')||n.includes('apósito')) return '🩹';
+  if (n.includes('dea')||n.includes('desfibrilador')) return '&#x26A1;';
+  if (n.includes('oxígeno')) return '🫁';
+  if (n.includes('collarín')||n.includes('inmoviliz')) return '🦴';
+  if (n.includes('tensiómetro')||n.includes('esfigmo')) return '🩺';
+  if (n.includes('suero')||n.includes('glucosa')) return '🧪';
+  return '📦';
+}
+
+// -------
+// DETAIL
+// -------
+function showDetail(index) {
+  const item=ITEMS[index], today=new Date(), es=getExpiryStatus(item.Caducidad,today);
+  const thumbHtml = item._photo
+    ? '<img src="' + (item._photo.startsWith('http') ? item._photo : 'data:image/jpeg;base64,'+item._photo) + '" alt="">'
+    : getCategoryEmoji(item.Nombre);
+  document.getElementById('detail-body').innerHTML=`
+    <div class="detail-thumb">${thumbHtml}</div>
+    <div class="detail-grid">
+      <div class="detail-field full"><div class="detail-field-lbl">Nombre</div><div class="detail-field-val">${item.Nombre}</div></div>
+      <div class="detail-field"><div class="detail-field-lbl">Cantidad</div><div class="detail-field-val" style="color:var(--accent)">${item.Cantidad} ud</div></div>
+      <div class="detail-field"><div class="detail-field-lbl">Ubicación</div><div class="detail-field-val">${item.Ubicación||'-'}</div></div>
+      <div class="detail-field"><div class="detail-field-lbl">Caducidad</div><div class="detail-field-val" style="color:${es==='expired'?'var(--red)':es==='expiring'?'var(--warn)':'var(--accent2)'}">${item.Caducidad||'-'}</div></div>
+      <div class="detail-field"><div class="detail-field-lbl">Código</div><div class="detail-field-val" style="font-family:var(--font-mono);font-size:0.73rem">${item.Código||'-'}</div></div>
+      <div class="detail-field"><div class="detail-field-lbl">Registrado por</div><div class="detail-field-val">${item.Autor||'-'}</div></div>
+    </div>`;
+  document.getElementById('delete-btn').onclick=()=>{ if(confirm(`¿Eliminar "${item.Nombre}"?`)) deleteItem(index); };
+  document.getElementById('edit-btn').onclick=()=>editItem(index);
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function closeDetailModal() { document.getElementById('detail-modal').classList.remove('open'); }
+
+async function deleteItem(index) {
+  const item=ITEMS[index]; showLoading('Eliminando...');
+  try {
+    await deleteItemFromSheet(item._row);
+    ITEMS.splice(index,1); ITEMS.forEach((it)=>{ if(it._row>item._row) it._row--; });
+    renderList(); updateStats(); showToast('🗑 Eliminado','success'); setSyncOk('Actualizado');
+  } catch(e) { showToast('Error: '+e.message,'error'); }
+  hideLoading(); closeDetailModal();
+}
+
+function editItem(index) {
+  const item=ITEMS[index]; closeDetailModal(); openScanModal();
+  setTimeout(()=>{
+    switchMode('manual');
+    document.getElementById('f-nombre').value=item.Nombre;
+    document.getElementById('f-cantidad').value=item.Cantidad;
+    document.getElementById('f-ubicacion').value=item.Ubicación||'';
+    document.getElementById('f-caducidad').value=item.Caducidad||'';
+    if (item._photo) { setPhotoPreview(item._photo); capturedPhotoB64=item._photo; }
+  },100);
+}
+
+// -------
+// UTILS
+// -------
+function clearForm() {
+  ['f-nombre','f-cantidad','f-ubicacion','f-caducidad'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('barcode-info').style.display='none';
+  document.getElementById('barcode-value').textContent='-';
+  document.getElementById('ai-result-bar').classList.remove('visible');
+  clearFoto();
+  hideCapturePreview();
+  lastBarcode='';
+}
+
+function setStatus(msg,cls) { const el=document.getElementById('camera-status'); el.textContent=msg; el.className='camera-status '+(cls||''); }
+function showToast(msg,type='') { const t=document.getElementById('toast'); t.textContent=msg; t.className='toast '+type; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+function showLoading(msg='Procesando...') { document.getElementById('loading-text').textContent=msg; document.getElementById('loading-overlay').classList.add('show'); }
+function hideLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
+</script>
+</body>
+</html>
