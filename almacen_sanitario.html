@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0f1a">
+<title>AlmacénTES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<style>
+:root{
+  --bg:#0a0f1a;--surface:#111827;--surface2:#1a2235;--border:#1e3a5f;
+  --accent:#00d4ff;--accent2:#00ff9d;--warn:#ff6b35;--text:#e8f4fd;
+  --text-dim:#6b8aa8;--red:#ff3d5a;
+  --cat-rojo:#e53e3e;--cat-azul:#3182ce;--cat-verde:#38a169;
+  --cat-amarillo:#d69e2e;--cat-gris:#718096;
+  --font-display:'Syne',sans-serif;--font-mono:'DM Mono',monospace;
+  --radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);min-height:100dvh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;padding:32px 24px}
+.login-icon{width:72px;height:72px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 0 40px rgba(0,212,255,0.3);margin-bottom:18px}
+.login-title{font-size:2rem;font-weight:800;letter-spacing:-0.03em;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.login-sub{font-family:var(--font-mono);font-size:0.7rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:36px}
+.login-label{font-family:var(--font-mono);font-size:0.7rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:14px}
+.user-cards{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:28px}
+.user-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;text-align:center;cursor:pointer;transition:border-color 0.2s,background 0.2s;min-width:90px}
+.user-card:active,.user-card.selected{border-color:var(--accent);background:rgba(0,212,255,0.08)}
+.user-avatar{font-size:28px;margin-bottom:6px}
+.user-name{font-size:0.8rem;font-weight:700;color:var(--text)}
+.btn-entrar{background:linear-gradient(135deg,var(--accent),#0099cc);color:#0a0f1a;font-family:var(--font-display);font-weight:700;font-size:0.95rem;padding:14px 32px;border-radius:10px;border:none;cursor:pointer;opacity:0.4;pointer-events:none;transition:opacity 0.2s,transform 0.1s;display:flex;align-items:center;gap:8px;width:100%;max-width:320px;justify-content:center}
+.btn-entrar.active{opacity:1;pointer-events:all}
+.btn-entrar:active{transform:scale(0.97)}
+.login-note{margin-top:16px;font-family:var(--font-mono);font-size:0.7rem;color:var(--text-dim);text-align:center;line-height:1.6;display:none}
+
+/* APP */
+#app{display:none;flex-direction:column;min-height:100dvh;position:relative;z-index:1}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.topbar-title{font-size:1rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sync-badge{font-family:var(--font-mono);font-size:0.62rem;padding:3px 8px;border-radius:20px;border:1px solid var(--border);color:var(--text-dim);white-space:nowrap}
+.sync-badge.ok{border-color:var(--accent2);color:var(--accent2)}
+.sync-badge.syncing{border-color:var(--accent);color:var(--accent)}
+.sync-badge.error{border-color:var(--red);color:var(--red)}
+.topbar-actions{display:flex;gap:8px}
+.icon-btn{width:36px;height:36px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;color:var(--text);transition:border-color 0.2s}
+.icon-btn:active{border-color:var(--accent)}
+
+/* CATEGORIAS FILTRO */
+.cat-filter{display:flex;gap:6px;padding:10px 14px;overflow-x:auto;border-bottom:1px solid var(--border);scrollbar-width:none}
+.cat-filter::-webkit-scrollbar{display:none}
+.cat-pill{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);font-family:var(--font-mono);font-size:0.62rem;cursor:pointer;white-space:nowrap;transition:all 0.15s;color:var(--text-dim)}
+.cat-pill.active{color:#fff}
+.cat-pill[data-cat="todos"].active{border-color:var(--accent);background:rgba(0,212,255,0.15);color:var(--accent)}
+.cat-pill[data-cat="rojo"].active{border-color:var(--cat-rojo);background:rgba(229,62,62,0.18);color:var(--cat-rojo)}
+.cat-pill[data-cat="azul"].active{border-color:var(--cat-azul);background:rgba(49,130,206,0.18);color:var(--cat-azul)}
+.cat-pill[data-cat="verde"].active{border-color:var(--cat-verde);background:rgba(56,161,105,0.18);color:var(--cat-verde)}
+.cat-pill[data-cat="amarillo"].active{border-color:var(--cat-amarillo);background:rgba(214,158,46,0.18);color:var(--cat-amarillo)}
+.cat-pill[data-cat="gris"].active{border-color:var(--cat-gris);background:rgba(113,128,150,0.18);color:var(--cat-gris)}
+.cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.stat-cell{background:var(--surface);padding:11px 16px;text-align:center}
+.stat-num{font-size:1.3rem;font-weight:800;color:var(--accent);font-family:var(--font-mono);line-height:1}
+.stat-lbl{font-size:0.56rem;font-family:var(--font-mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-top:3px}
+.search-bar{padding:10px 14px;border-bottom:1px solid var(--border)}
+.search-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;color:var(--text);font-family:var(--font-mono);font-size:0.82rem;outline:none}
+.search-input:focus{border-color:var(--accent)}
+.list-area{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+
+/* ITEM CARD */
+.item-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;display:flex;align-items:flex-start;gap:10px;animation:fadeUp 0.3s ease both;cursor:pointer;transition:border-color 0.2s;border-left-width:3px}
+.item-card:active{border-color:var(--accent)}
+.item-card.expiring{border-bottom:2px solid var(--warn)}
+.item-card.expired{border-bottom:2px solid var(--red)}
+.item-card[data-cat="rojo"]{border-left-color:var(--cat-rojo)}
+.item-card[data-cat="azul"]{border-left-color:var(--cat-azul)}
+.item-card[data-cat="verde"]{border-left-color:var(--cat-verde)}
+.item-card[data-cat="amarillo"]{border-left-color:var(--cat-amarillo)}
+.item-card[data-cat="gris"]{border-left-color:var(--cat-gris)}
+.item-card[data-cat="todos"]{border-left-color:var(--border)}
+
+/* THUMBNAIL con fondo transparente */
+.item-thumb{width:52px;height:52px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px}
+.item-thumb img{width:100%;height:100%;object-fit:contain}
+.item-info{flex:1;min-width:0}
+.item-name{font-size:0.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-desc{font-size:0.7rem;color:var(--text-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-mono)}
+.item-meta{margin-top:4px;display:flex;flex-wrap:wrap;gap:4px}
+.tag{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-family:var(--font-mono);font-size:0.58rem;color:var(--text-dim)}
+.tag.warn{border-color:var(--warn);color:var(--warn)}
+.tag.danger{border-color:var(--red);color:var(--red)}
+.tag.ok{border-color:var(--accent2);color:var(--accent2)}
+.item-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.item-qty{font-family:var(--font-mono);font-size:1rem;font-weight:500;color:var(--accent);white-space:nowrap}
+.item-qty span{font-size:0.58rem;color:var(--text-dim)}
+.cat-badge{font-family:var(--font-mono);font-size:0.56rem;padding:2px 7px;border-radius:10px;font-weight:600;color:#fff}
+.cat-badge.rojo{background:var(--cat-rojo)}
+.cat-badge.azul{background:var(--cat-azul)}
+.cat-badge.verde{background:var(--cat-verde)}
+.cat-badge.amarillo{background:var(--cat-amarillo);color:#1a1a1a}
+.cat-badge.gris{background:var(--cat-gris)}
+
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px;text-align:center}
+.empty-icon{font-size:44px;opacity:0.4}
+.empty-title{font-size:0.95rem;font-weight:700;color:var(--text-dim)}
+.empty-sub{font-family:var(--font-mono);font-size:0.68rem;color:var(--text-dim);opacity:0.6}
+.fab{position:fixed;bottom:26px;right:22px;width:58px;height:58px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;box-shadow:0 8px 28px rgba(0,212,255,0.4);transition:transform 0.2s;z-index:20;border:none;color:#0a0f1a}
+.fab:active{transform:scale(0.92)}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);z-index:100;display:none;flex-direction:column}
+.modal-overlay.open{display:flex}
+.modal-header{padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:0.95rem;font-weight:700;color:var(--accent)}
+.close-btn{width:34px;height:34px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;color:var(--text);flex-shrink:0}
+.mode-tabs{display:flex;gap:6px;padding:10px 18px;flex-shrink:0}
+.tab-btn{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;font-family:var(--font-display);font-weight:600;font-size:0.73rem;cursor:pointer;color:var(--text-dim);transition:all 0.2s}
+.tab-btn.active{background:rgba(0,212,255,0.1);border-color:var(--accent);color:var(--accent)}
+
+/* CAMERA */
+.camera-wrap{flex:0 0 190px;position:relative;overflow:hidden;margin:0 18px;border-radius:var(--radius);border:1px solid var(--border);background:#000}
+#scanner-container,#photo-container{position:absolute;inset:0}
+#scanner-container video,#photo-container video{width:100%;height:100%;object-fit:cover}
+#scanner-container canvas{display:none}
+#capture-preview{position:absolute;inset:0;display:none;background:#000;z-index:5}
+#capture-preview img{width:100%;height:100%;object-fit:contain}
+#capture-preview .ai-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:rgba(0,0,0,0.55)}
+#capture-preview .ai-label{font-family:var(--font-mono);font-size:0.68rem;color:var(--accent);letter-spacing:0.08em}
+.scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:2}
+.scan-frame{width:210px;height:80px;border:2px solid var(--accent);border-radius:8px;position:relative;box-shadow:0 0 0 9999px rgba(0,0,0,0.45)}
+.scan-line{position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);animation:scanMove 2s ease-in-out infinite;box-shadow:0 0 8px var(--accent)}
+@keyframes scanMove{0%{top:0}50%{top:calc(100% - 2px)}100%{top:0}}
+.photo-crosshair{width:140px;height:140px;border:2px solid rgba(0,255,157,0.7);border-radius:12px}
+.camera-status{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);border:1px solid var(--border);border-radius:20px;padding:4px 11px;font-family:var(--font-mono);font-size:0.62rem;color:var(--text-dim);white-space:nowrap;z-index:6}
+.camera-status.scanning{color:var(--accent);border-color:var(--accent)}
+.camera-status.detected{color:var(--accent2);border-color:var(--accent2)}
+.camera-status.analyzing{color:var(--warn);border-color:var(--warn);animation:pulse 1s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.photo-btn{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);width:50px;height:50px;background:white;border-radius:50%;border:4px solid rgba(255,255,255,0.3);cursor:pointer;z-index:5;transition:transform 0.1s}
+.photo-btn:active{transform:translateX(-50%) scale(0.91)}
+
+/* FOTO PREVIEW */
+.foto-preview-wrap{position:relative;width:100%;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--surface2);display:none;flex-shrink:0}
+.foto-preview-wrap.visible{display:block}
+.foto-preview-wrap img{width:100%;height:100%;object-fit:contain;background:var(--surface2)}
+.foto-badge{position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.7);border:1px solid var(--accent2);color:var(--accent2);border-radius:6px;font-family:var(--font-mono);font-size:0.56rem;padding:2px 6px}
+.foto-remove{position:absolute;top:5px;left:5px;width:22px;height:22px;background:rgba(0,0,0,0.7);border:1px solid var(--red);color:var(--red);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px}
+
+/* FORM */
+.form-area{padding:8px 18px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;min-height:0}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.field-block{display:flex;flex-direction:column}
+label{font-size:0.66rem;font-family:var(--font-mono);color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;display:block;margin-bottom:4px}
+input[type="text"],textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--font-mono);font-size:0.82rem;outline:none;transition:border-color 0.2s;resize:none}
+input[type="text"]:focus,textarea:focus{border-color:var(--accent)}
+
+/* SELECTOR CATEGORIA */
+.cat-selector{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.cat-opt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 4px;border-radius:8px;border:1px solid var(--border);cursor:pointer;background:var(--surface2);transition:all 0.15s}
+.cat-opt:active{transform:scale(0.95)}
+.cat-opt.selected.rojo{border-color:var(--cat-rojo);background:rgba(229,62,62,0.15)}
+.cat-opt.selected.azul{border-color:var(--cat-azul);background:rgba(49,130,206,0.15)}
+.cat-opt.selected.verde{border-color:var(--cat-verde);background:rgba(56,161,105,0.15)}
+.cat-opt.selected.amarillo{border-color:var(--cat-amarillo);background:rgba(214,158,46,0.15)}
+.cat-opt.selected.gris{border-color:var(--cat-gris);background:rgba(113,128,150,0.15)}
+.cat-circle{width:22px;height:22px;border-radius:50%}
+.cat-circle.rojo{background:var(--cat-rojo)}
+.cat-circle.azul{background:var(--cat-azul)}
+.cat-circle.verde{background:var(--cat-verde)}
+.cat-circle.amarillo{background:var(--cat-amarillo)}
+.cat-circle.gris{background:var(--cat-gris)}
+.cat-opt-label{font-family:var(--font-mono);font-size:0.54rem;color:var(--text-dim);text-align:center;line-height:1.2}
+
+.barcode-detected{background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.3);border-radius:8px;padding:7px 12px;font-family:var(--font-mono);font-size:0.68rem;color:var(--accent);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.ai-result-bar{background:rgba(0,255,157,0.06);border:1px solid rgba(0,255,157,0.2);border-radius:8px;padding:7px 12px;font-family:var(--font-mono);font-size:0.66rem;color:var(--accent2);display:none;flex-shrink:0}
+.ai-result-bar.visible{display:block}
+.action-row{padding:8px 18px 22px;display:flex;gap:8px;flex-shrink:0}
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;background:linear-gradient(135deg,var(--accent),#0099cc);color:#0a0f1a;font-family:var(--font-display);font-weight:700;font-size:0.88rem;padding:12px 20px;border-radius:8px;border:none;cursor:pointer;width:100%;transition:opacity 0.2s,transform 0.1s}
+.btn:active{transform:scale(0.97);opacity:0.9}
+.btn.secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn.danger{background:linear-gradient(135deg,var(--red),#cc0022);color:white}
+
+/* DETAIL */
+#detail-modal .modal-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.detail-thumb{width:100%;height:160px;border-radius:var(--radius);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:44px;border:1px solid var(--border)}
+.detail-thumb img{width:100%;height:100%;object-fit:contain;background:var(--surface2)}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.detail-field{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px}
+.detail-field.full{grid-column:1/-1}
+.detail-field-lbl{font-family:var(--font-mono);font-size:0.56rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px}
+.detail-field-val{font-size:0.85rem;font-weight:600;color:var(--text)}
+.detail-cat-bar{height:6px;border-radius:3px;margin-top:6px}
+.detail-cat-bar.rojo{background:var(--cat-rojo)}
+.detail-cat-bar.azul{background:var(--cat-azul)}
+.detail-cat-bar.verde{background:var(--cat-verde)}
+.detail-cat-bar.amarillo{background:var(--cat-amarillo)}
+.detail-cat-bar.gris{background:var(--cat-gris)}
+
+/* TOAST / LOADING */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:9px 18px;font-family:var(--font-mono);font-size:0.72rem;color:var(--text);opacity:0;transition:all 0.3s;z-index:1000;white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{border-color:var(--accent2);color:var(--accent2)}
+.toast.error{border-color:var(--red);color:var(--red)}
+#loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:200}
+#loading-overlay.show{display:flex}
+.loading-text{font-family:var(--font-mono);font-size:0.78rem;color:var(--accent);max-width:260px;text-align:center;line-height:1.5}
+.spinner{width:18px;height:18px;border:2px solid rgba(0,212,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block}
+.spinner-lg{width:34px;height:34px;border-width:3px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-icon">🏥</div>
+  <div class="login-title">AlmacénTES</div>
+  <div class="login-sub">Gestion de material sanitario</div>
+  <div class="login-label">¿Quién registra?</div>
+  <div class="user-cards">
+    <div class="user-card" onclick="seleccionarUsuario('Fran',this)">
+      <div class="user-avatar">&#x1F468;&#x200D;&#x2695;&#xFE0F;</div><div class="user-name">Fran</div>
+    </div>
+    <div class="user-card" onclick="seleccionarUsuario('Julio',this)">
+      <div class="user-avatar">&#x1F468;&#x200D;&#x1F3EB;</div><div class="user-name">Julio</div>
+    </div>
+    <div class="user-card" onclick="seleccionarUsuario('Tere',this)">
+      <div class="user-avatar">&#x1F469;&#x200D;&#x2695;&#xFE0F;</div><div class="user-name">Tere</div>
+    </div>
+  </div>
+  <div style="width:100%;max-width:320px;margin-bottom:16px">
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Claude API Key (IA)</div>
+    <div style="display:flex;gap:6px">
+      <input type="password" id="claude-key-input" placeholder="sk-ant-..."
+        style="flex:1;background:#1a2235;border:1px solid #1e3a5f;border-radius:8px;padding:10px 12px;color:#e8f4fd;font-family:var(--font-mono);font-size:0.8rem;outline:none"
+        oninput="this.style.borderColor=this.value?'#00ff9d':'#1e3a5f'"
+        value="">
+      <button onclick="saveClaudeKey()" style="background:#1a2235;border:1px solid #1e3a5f;border-radius:8px;padding:10px 12px;color:#00ff9d;font-family:var(--font-mono);font-size:0.72rem;cursor:pointer;white-space:nowrap">Guardar</button>
+    </div>
+    <div id="key-status" style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-dim);margin-top:5px"></div>
+  </div>
+  <button class="btn-entrar" id="btnEntrar" onclick="entrar()">Entrar con Google</button>
+  <div class="login-note" id="loginNote">
+    Conectando con Google...<br>
+    <span style="font-size:10px;opacity:0.7">Se abrira una ventana para autorizar acceso al Sheet</span>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">AlmacénTES</div>
+      <div class="sync-badge" id="syncBadge">-</div>
+    </div>
+    <div class="topbar-actions">
+      <div class="icon-btn" id="syncUser">&#x1F464;</div>
+      <div class="icon-btn" onclick="sincronizar()">&#x1F504;</div>
+    </div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-cell"><div class="stat-num" id="stat-total">0</div><div class="stat-lbl">Articulos</div></div>
+    <div class="stat-cell"><div class="stat-num" id="stat-stock" style="color:var(--accent2)">0</div><div class="stat-lbl">Unidades</div></div>
+    <div class="stat-cell"><div class="stat-num" id="stat-exp" style="color:var(--warn)">0</div><div class="stat-lbl">Caducan</div></div>
+  </div>
+  <div class="cat-filter" id="cat-filter">
+    <div class="cat-pill active" data-cat="todos" onclick="setCatFilter('todos',this)"><div class="cat-dot" style="background:var(--accent)"></div>Todos</div>
+    <div class="cat-pill" data-cat="rojo" onclick="setCatFilter('rojo',this)"><div class="cat-dot" style="background:var(--cat-rojo)"></div>Circulatorio</div>
+    <div class="cat-pill" data-cat="azul" onclick="setCatFilter('azul',this)"><div class="cat-dot" style="background:var(--cat-azul)"></div>Respiratorio</div>
+    <div class="cat-pill" data-cat="verde" onclick="setCatFilter('verde',this)"><div class="cat-dot" style="background:var(--cat-verde)"></div>Inmovilización</div>
+    <div class="cat-pill" data-cat="amarillo" onclick="setCatFilter('amarillo',this)"><div class="cat-dot" style="background:var(--cat-amarillo)"></div>Pediatrico</div>
+    <div class="cat-pill" data-cat="gris" onclick="setCatFilter('gris',this)"><div class="cat-dot" style="background:var(--cat-gris)"></div>Otros</div>
+  </div>
+  <div class="search-bar">
+    <input class="search-input" type="search" id="search-input" placeholder="Buscar material..." oninput="filterItems()">
+  </div>
+  <div class="list-area" id="item-list">
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">&#x1F4E6;</div>
+      <div class="empty-title">Almacén vacio</div>
+      <div class="empty-sub">Pulsa + para añadir material</div>
+    </div>
+  </div>
+  <button class="fab" onclick="openScanModal()">+</button>
+</div>
+
+<!-- SCAN MODAL -->
+<div id="scan-modal" class="modal-overlay">
+  <div class="modal-header">
+    <div class="modal-title">Registrar material</div>
+    <div class="close-btn" onclick="closeScanModal()">x</div>
+  </div>
+  <div class="mode-tabs">
+    <div class="tab-btn active" id="tab-barcode" onclick="switchMode('barcode')">Codigo+IA</div>
+    <div class="tab-btn" id="tab-photo" onclick="switchMode('photo')">Foto IA</div>
+    <div class="tab-btn" id="tab-manual" onclick="switchMode('manual')">Manual</div>
+  </div>
+  <div class="camera-wrap" id="camera-wrap">
+    <div id="scanner-container"><div id="interactive" class="viewport"></div></div>
+    <div class="scan-overlay" id="scan-overlay"><div class="scan-frame"><div class="scan-line"></div></div></div>
+    <div id="photo-container" style="display:none">
+      <video id="photo-video" autoplay playsinline muted></video>
+      <canvas id="photo-canvas" style="display:none"></canvas>
+      <div class="scan-overlay"><div class="photo-crosshair"></div></div>
+      <button class="photo-btn" onclick="capturePhoto()"></button>
+    </div>
+    <div id="capture-preview">
+      <img id="capture-img" src="" alt="">
+      <div class="ai-overlay"><div class="spinner"></div><div class="ai-label" id="ai-overlay-label">Analizando...</div></div>
+    </div>
+    <div class="camera-status" id="camera-status">Iniciando...</div>
+  </div>
+
+  <div style="padding:0 18px;margin-top:7px;display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+    <div class="barcode-detected" id="barcode-info" style="display:none">
+      <span>&#x1F4CA;</span><span id="barcode-value">-</span>
+    </div>
+    <div class="foto-preview-wrap" id="foto-preview-wrap">
+      <img id="foto-preview-img" src="" alt="">
+      <div class="foto-badge">Foto OK</div>
+      <div class="foto-remove" onclick="clearFoto()">x</div>
+    </div>
+    <div class="ai-result-bar" id="ai-result-bar">&#x1F916; <span id="ai-result-text"></span></div>
+  </div>
+
+  <div class="form-area">
+    <div class="field-block">
+      <label>Nombre *</label>
+      <input type="text" id="f-nombre" placeholder="Ej: Mascarilla FFP2, Guantes nitrilo L...">
+    </div>
+    <div class="field-block">
+      <label>Descripcion</label>
+      <textarea id="f-descripcion" rows="2" placeholder="Descripcion detallada, uso, referencia..."></textarea>
+    </div>
+    <div class="field-block">
+      <label>Categoria</label>
+      <div class="cat-selector">
+        <div class="cat-opt" data-c="rojo" onclick="selectCat('rojo',this)">
+          <div class="cat-circle rojo"></div><div class="cat-opt-label">Circulatorio</div>
+        </div>
+        <div class="cat-opt" data-c="azul" onclick="selectCat('azul',this)">
+          <div class="cat-circle azul"></div><div class="cat-opt-label">Respiratorio</div>
+        </div>
+        <div class="cat-opt" data-c="verde" onclick="selectCat('verde',this)">
+          <div class="cat-circle verde"></div><div class="cat-opt-label">Inmoviliz.</div>
+        </div>
+        <div class="cat-opt" data-c="amarillo" onclick="selectCat('amarillo',this)">
+          <div class="cat-circle amarillo"></div><div class="cat-opt-label">Pediatrico</div>
+        </div>
+        <div class="cat-opt selected gris" data-c="gris" onclick="selectCat('gris',this)">
+          <div class="cat-circle gris"></div><div class="cat-opt-label">Otros</div>
+        </div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field-block">
+        <label>Cantidad *</label>
+        <input type="text" id="f-cantidad" placeholder="50">
+      </div>
+      <div class="field-block">
+        <label>Ubicacion</label>
+        <input type="text" id="f-ubicacion" placeholder="Estante A2">
+      </div>
+    </div>
+    <div class="field-block">
+      <label>Fecha caducidad</label>
+      <input type="text" id="f-caducidad" placeholder="12/2026">
+    </div>
+  </div>
+  <div class="action-row">
+    <button class="btn secondary" style="flex:0.4" onclick="clearForm()">Limpiar</button>
+    <button class="btn" style="flex:1" onclick="saveItem()">Guardar</button>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div id="detail-modal" class="modal-overlay">
+  <div class="modal-header">
+    <div class="modal-title">Detalle</div>
+    <div class="close-btn" onclick="closeDetailModal()">x</div>
+  </div>
+  <div class="modal-body" id="detail-body"></div>
+  <div class="action-row">
+    <button class="btn danger" style="flex:0.5" id="delete-btn">Eliminar</button>
+    <button class="btn secondary" style="flex:1" id="edit-btn">Editar</button>
+  </div>
+</div>
+
+<div id="loading-overlay">
+  <div class="spinner spinner-lg"></div>
+  <div class="loading-text" id="loading-text">Procesando...</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// CONFIG
+const CLIENT_ID  = '756258617711-pqe3js4qqshdsfmr7of7d3ga0r6r9kd9.apps.googleusercontent.com';
+const SHEET_ID   = '1Sr9LxAKWEaNZ177qaxEXaot_lyDunYHbTpdk3IZSYuc';
+const CLAUDE_KEY = localStorage.getItem('almacen_claude_key') || '';
+const TAB        = 'Inventario';
+const SCOPES     = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+const DISC_SHEETS = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+const DISC_DRIVE  = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+// Columnas: A=ID B=Nombre C=Descripcion D=Categoria E=Cantidad F=Caducidad G=Ubicacion H=Codigo I=Timestamp J=Autor K=Foto_URL L=Foto_IMG
+const HEADERS = ['ID','Nombre','Descripcion','Categoria','Cantidad','Caducidad','Ubicacion','Codigo','Timestamp','Autor','Foto_URL','Foto_IMG'];
+
+// CATEGORIAS
+const CATS = {
+  rojo:     { label:'Circulatorio',  color:'#e53e3e' },
+  azul:     { label:'Respiratorio',  color:'#3182ce' },
+  verde:    { label:'Inmovilizacion',color:'#38a169' },
+  amarillo: { label:'Pediatrico',    color:'#d69e2e' },
+  gris:     { label:'Otros',         color:'#718096' }
+};
+
+// STATE
+let ITEMS = [];
+let usuarioActual = '';
+let gapiOk = false, gisOk = false, tokenClient = null, syncTimer = null;
+let currentMode = 'barcode';
+let photoStream = null;
+let quaggaRunning = false;
+let lastBarcode = '';
+let capturedPhotoB64 = null;
+let selectedCat = 'gris';
+let activeCatFilter = 'todos';
+
+// LOGIN
+// CLAUDE KEY en localStorage
+function saveClaudeKey() {
+  var k = document.getElementById('claude-key-input').value.trim();
+  if (!k) { document.getElementById('key-status').textContent = 'Introduce la key primero'; return; }
+  if (k.indexOf('sk-ant-') !== 0) { document.getElementById('key-status').textContent = 'Formato incorrecto (debe empezar por sk-ant-)'; return; }
+  localStorage.setItem('almacen_claude_key', k);
+  // Reload CLAUDE_KEY value - trick: store in window var
+  window._claudeKey = k;
+  document.getElementById('key-status').textContent = 'Key guardada en este dispositivo';
+  document.getElementById('key-status').style.color = '#00ff9d';
+}
+
+function getClaudeKey() {
+  if (!window._claudeKey) window._claudeKey = localStorage.getItem('almacen_claude_key') || '';
+  return window._claudeKey;
+}
+
+// Init on load - esperar a que el DOM esté listo
+window.addEventListener('DOMContentLoaded', function() {
+  var saved = localStorage.getItem('almacen_claude_key');
+  if (saved) {
+    window._claudeKey = saved;
+    var inp = document.getElementById('claude-key-input');
+    if (inp) {
+      inp.value = saved;
+      inp.style.borderColor = '#00ff9d';
+    }
+    var ks = document.getElementById('key-status');
+    if (ks) {
+      ks.textContent = 'Key guardada en este dispositivo';
+      ks.style.color = '#00ff9d';
+    }
+  }
+});
+
+function seleccionarUsuario(nombre, el) {
+  usuarioActual = nombre;
+  document.querySelectorAll('.user-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('btnEntrar').classList.add('active');
+}
+
+function entrar() {
+  if (!usuarioActual) return;
+  document.getElementById('loginNote').style.display = 'block';
+  document.getElementById('btnEntrar').innerHTML = '<span class="spinner"></span> Conectando...';
+  var s1 = document.createElement('script');
+  s1.src = 'https://apis.google.com/js/api.js';
+  s1.onload = function() {
+    gapi.load('client', async function() {
+      await gapi.client.init({ discoveryDocs:[DISC_SHEETS, DISC_DRIVE] });
+      gapiOk = true; intentarAuth();
+    });
+  };
+  document.head.appendChild(s1);
+  var s2 = document.createElement('script');
+  s2.src = 'https://accounts.google.com/gsi/client';
+  s2.onload = function() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID, scope: SCOPES,
+      callback: async function(resp) {
+        if (resp.error) { setSyncError('Error auth'); resetLogin(); return; }
+        mostrarApp();
+        await cargarSheet();
+        iniciarAutoSync();
+      }
+    });
+    gisOk = true; intentarAuth();
+  };
+  document.head.appendChild(s2);
+}
+
+function intentarAuth() { if (gapiOk && gisOk) tokenClient.requestAccessToken({ prompt:'select_account' }); }
+function resetLogin() { document.getElementById('btnEntrar').innerHTML='Entrar con Google'; document.getElementById('btnEntrar').classList.add('active'); }
+function mostrarApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  var app = document.getElementById('app');
+  app.style.display = 'flex'; app.style.flexDirection = 'column';
+  document.getElementById('syncUser').textContent = usuarioActual.charAt(0);
+  setSyncSyncing('Cargando...');
+}
+
+// SHEETS
+async function cargarSheet() {
+  setSyncSyncing('Sincronizando...');
+  try {
+    await ensureTabExists();
+    var r = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId:SHEET_ID, range:TAB+'!A:L' });
+    var rows = r.result.values || [];
+    if (rows.length <= 1) { ITEMS=[]; renderList(); updateStats(); setSyncOk('Sin datos'); return; }
+    ITEMS = rows.slice(1).filter(function(r){ return r && r[1]; }).map(function(r,i) {
+      return {
+        _row:i+2,
+        ID:r[0]||'', Nombre:r[1]||'', Descripcion:r[2]||'',
+        Categoria:r[3]||'gris', Cantidad:r[4]||'',
+        Caducidad:r[5]||'', Ubicacion:r[6]||'', Codigo:r[7]||'',
+        Timestamp:r[8]||'', Autor:r[9]||'',
+        _photoUrl:r[10]||'',
+        _photo:r[10]||''
+      };
+    });
+    renderList(); updateStats();
+    setSyncOk('Act. ' + new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}));
+  } catch(e) { console.error(e); setSyncError('Error al leer'); }
+}
+
+async function ensureTabExists() {
+  var meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId:SHEET_ID });
+  var exists = meta.result.sheets && meta.result.sheets.some(function(s){ return s.properties.title === TAB; });
+  if (!exists) {
+    await gapi.client.sheets.spreadsheets.batchUpdate({ spreadsheetId:SHEET_ID, resource:{requests:[{addSheet:{properties:{title:TAB}}}]} });
+  }
+  // Siempre reescribir cabeceras para garantizar orden correcto de columnas
+  await gapi.client.sheets.spreadsheets.values.update({
+    spreadsheetId:SHEET_ID, range:TAB+'!A1:L1',
+    valueInputOption:'USER_ENTERED', resource:{values:[HEADERS]}
+  });
+}
+
+function toRow(item) {
+  var fotoUrl = item._photoUrl || '';
+  var fotoFormula = fotoUrl ? '=IMAGE("' + fotoUrl + '",4,80,80)' : '';
+  return [
+    item.ID, item.Nombre, item.Descripcion||'', item.Categoria||'gris',
+    item.Cantidad, item.Caducidad||'', item.Ubicacion||'', item.Codigo||'',
+    item.Timestamp||new Date().toLocaleString('es-ES'), item.Autor||usuarioActual,
+    fotoUrl, fotoFormula
+  ];
+}
+
+async function getSheetTabId() {
+  var meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId:SHEET_ID });
+  var sheet = meta.result.sheets.find(function(s){ return s.properties.title === TAB; });
+  return sheet ? sheet.properties.sheetId : 0;
+}
+
+async function appendItemToSheet(item) {
+  await gapi.client.sheets.spreadsheets.values.append({
+    spreadsheetId:SHEET_ID, range:TAB+'!A:L',
+    valueInputOption:'USER_ENTERED', insertDataOption:'INSERT_ROWS',
+    resource:{values:[toRow(item)]}
+  });
+}
+
+async function deleteItemFromSheet(rowIndex) {
+  var sheetId = await getSheetTabId();
+  await gapi.client.sheets.spreadsheets.batchUpdate({
+    spreadsheetId:SHEET_ID,
+    resource:{requests:[{deleteDimension:{range:{sheetId:sheetId,dimension:'ROWS',startIndex:rowIndex-1,endIndex:rowIndex}}}]}
+  });
+}
+
+function iniciarAutoSync() { if(syncTimer) clearInterval(syncTimer); syncTimer = setInterval(cargarSheet, 30000); }
+async function sincronizar() { await cargarSheet(); }
+
+// SYNC BADGE
+function setSyncOk(msg)      { var b=document.getElementById('syncBadge'); b.textContent='ok '+msg; b.className='sync-badge ok'; }
+function setSyncSyncing(msg) { var b=document.getElementById('syncBadge'); b.textContent='... '+msg; b.className='sync-badge syncing'; }
+function setSyncError(msg)   { var b=document.getElementById('syncBadge'); b.textContent='! '+msg; b.className='sync-badge error'; }
+
+// DRIVE UPLOAD - usa fetch directo (no gapi.client.drive que no soporta upload)
+function compressForSheet(b64) {
+  try {
+    var img = new Image();
+    img.src = 'data:image/jpeg;base64,' + b64;
+    var MAX = 260;
+    var sw = img.naturalWidth || 320, sh = img.naturalHeight || 240;
+    var scale = Math.min(MAX/sw, MAX/sh, 1);
+    var w = Math.round(sw*scale), h = Math.round(sh*scale);
+    var canvas = document.createElement('canvas');
+    canvas.width=w; canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    return canvas.toDataURL('image/jpeg',0.38).split(',')[1];
+  } catch(e) { return b64; }
+}
+
+async function uploadPhotoToDrive(b64, filename) {
+  var token = gapi.client.getToken();
+  if (!token) throw new Error('Sin token OAuth');
+  var boundary = 'almacentes_boundary_foto';
+  var CRLF = '\r\n';
+  var metaJson = JSON.stringify({ name: filename, mimeType: 'image/jpeg' });
+  var body =
+    '--' + boundary + CRLF +
+    'Content-Type: application/json' + CRLF + CRLF +
+    metaJson + CRLF +
+    '--' + boundary + CRLF +
+    'Content-Type: image/jpeg' + CRLF +
+    'Content-Transfer-Encoding: base64' + CRLF + CRLF +
+    b64 + CRLF +
+    '--' + boundary + '--';
+
+  var uploadRes = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token.access_token,
+        'Content-Type': 'multipart/related; boundary=' + boundary
+      },
+      body: body
+    }
+  );
+
+  if (!uploadRes.ok) {
+    var errData = await uploadRes.json();
+    throw new Error('Drive ' + uploadRes.status + ': ' + (errData.error ? errData.error.message : 'unknown'));
+  }
+
+  var file = await uploadRes.json();
+
+  // Hacer publica para que IMAGE() en Sheets la cargue
+  await fetch('https://www.googleapis.com/drive/v3/files/' + file.id + '/permissions', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + token.access_token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ role:'reader', type:'anyone' })
+  });
+
+  var url = 'https://drive.google.com/uc?export=view&id=' + file.id;
+  return { fileId:file.id, url:url };
+}
+
+// SCAN MODAL
+function openScanModal()  { document.getElementById('scan-modal').classList.add('open'); switchMode('barcode'); }
+function closeScanModal() { document.getElementById('scan-modal').classList.remove('open'); stopCamera(); stopQuagga(); clearForm(); }
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-'+mode).classList.add('active');
+  var scanC=document.getElementById('scanner-container');
+  var photoC=document.getElementById('photo-container');
+  var scanO=document.getElementById('scan-overlay');
+  var camW=document.getElementById('camera-wrap');
+  stopCamera(); stopQuagga(); hideCapturePreview();
+  if (mode==='barcode') {
+    camW.style.display=''; scanC.style.display=''; photoC.style.display='none'; scanO.style.display='';
+    startQuagga();
+  } else if (mode==='photo') {
+    camW.style.display=''; scanC.style.display='none'; photoC.style.display=''; scanO.style.display='none';
+    startPhotoCamera();
+  } else {
+    camW.style.display='none';
+  }
+}
+
+// BARCODE
+function startQuagga() {
+  if (quaggaRunning) return;
+  setStatus('Apunta al codigo de barras','');
+  Quagga.init({
+    inputStream:{ name:'Live', type:'LiveStream', target:document.querySelector('#interactive'), constraints:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}} },
+    decoder:{ readers:['ean_reader','ean_8_reader','code_128_reader','code_39_reader','upc_reader'] },
+    locate:true
+  }, function(err) {
+    if (err) { setStatus('Error camara',''); return; }
+    Quagga.start(); quaggaRunning=true; setStatus('Escaneando...','scanning');
+  });
+  Quagga.onDetected(onBarcodeDetected);
+}
+
+function stopQuagga() {
+  if (!quaggaRunning) return;
+  Quagga.offDetected(onBarcodeDetected);
+  Quagga.stop(); quaggaRunning=false;
+}
+
+async function onBarcodeDetected(result) {
+  var code = result.codeResult.code;
+  if (code === lastBarcode) return;
+  lastBarcode = code;
+  if (navigator.vibrate) navigator.vibrate([80,30,80]);
+  stopQuagga();
+  setStatus('Codigo detectado!','detected');
+  document.getElementById('barcode-info').style.display='flex';
+  document.getElementById('barcode-value').textContent = code;
+  var b64 = captureFrameFromQuagga();
+  if (checkExistingByBarcode(code)) {
+    if (b64) { setPhotoPreview(b64); capturedPhotoB64 = b64; }
+    return;
+  }
+  if (!b64) { setStatus('Introduce nombre manualmente',''); return; }
+  showCapturePreview(b64, 'Analizando con IA...');
+  setStatus('Identificando...','analyzing');
+  if (getClaudeKey()) {
+    await identifyWithClaude(b64, code);
+  } else {
+    hideCapturePreview(); setPhotoPreview(b64); capturedPhotoB64 = b64;
+    setStatus('Codigo OK - introduce el nombre','detected');
+    document.getElementById('f-nombre').focus();
+  }
+}
+
+function captureFrameFromQuagga() {
+  try {
+    var video = document.querySelector('#interactive video');
+    if (!video || video.readyState < 2) return null;
+    var MAX = 320;
+    var sw = video.videoWidth || 640, sh = video.videoHeight || 480;
+    var scale = Math.min(MAX/sw, MAX/sh, 1);
+    var w = Math.round(sw*scale), h = Math.round(sh*scale);
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+    return canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+  } catch(e) { return null; }
+}
+
+function checkExistingByBarcode(code) {
+  var existing = ITEMS.find(function(it){ return it.Codigo === code; });
+  if (existing) {
+    document.getElementById('f-nombre').value = existing.Nombre;
+    document.getElementById('f-descripcion').value = existing.Descripcion||'';
+    document.getElementById('f-ubicacion').value = existing.Ubicacion||'';
+    if (existing.Categoria) selectCatByKey(existing.Categoria);
+    showToast('Articulo reconocido del inventario','success');
+    setStatus('Reconocido','detected');
+    return true;
+  }
+  return false;
+}
+
+// IA: IDENTIFICAR + ELIMINAR FONDO
+async function identifyWithClaude(b64, codigoBarras) {
+  if (!getClaudeKey()) return b64;
+  try {
+    var codeCtx = codigoBarras ? 'El codigo de barras es ' + codigoBarras + '. ' : '';
+    var prompt = codeCtx +
+      'Eres experto en material sanitario de emergencias (TES/061/SVB). ' +
+      'Analiza la imagen y responde SOLO con JSON sin backticks ni texto extra: ' +
+      '{"nombre":"nombre preciso del producto",' +
+      '"descripcion":"descripcion tecnica de 1-2 frases: uso, presentacion, tamaño o referencia",' +
+      '"categoria":"rojo|azul|verde|amarillo|gris",' +
+      '"caducidad_visible":"MM/YYYY si se ve claramente en la imagen si no vacio",' +
+      '"confianza":"alta|media|baja"} ' +
+      'CATEGORIA: rojo=circulatorio/venopuncion/medicacion, azul=via aerea/respiratorio/oxigeno, ' +
+      'verde=inmovilizacion/curas/proteccion/triaje, amarillo=pediatrico, gris=otros/monitorizacion/diagnostico.';
+
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':getClaudeKey(),'anthropic-version':'2023-06-01'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:400,
+        messages:[{ role:'user', content:[
+          { type:'image', source:{type:'base64',media_type:'image/jpeg',data:b64} },
+          { type:'text', text:prompt }
+        ]}]
+      })
+    });
+
+    var data = await res.json();
+    var text = (data.content && data.content[0] ? data.content[0].text : '').replace(/```json|```/g,'').trim();
+    var parsed = JSON.parse(text);
+
+    document.getElementById('f-nombre').value = parsed.nombre || '';
+    document.getElementById('f-descripcion').value = parsed.descripcion || '';
+    if (parsed.caducidad_visible) document.getElementById('f-caducidad').value = parsed.caducidad_visible;
+    if (parsed.categoria) selectCatByKey(parsed.categoria);
+
+    var bar = document.getElementById('ai-result-bar');
+    bar.classList.add('visible');
+    document.getElementById('ai-result-text').textContent =
+      (parsed.nombre||'') + ' | ' + (CATS[parsed.categoria]||CATS.gris).label + ' | confianza ' + (parsed.confianza||'');
+
+    // Eliminar fondo de la imagen con segunda llamada a Claude
+    setStatus('Eliminando fondo...','analyzing');
+    document.getElementById('ai-overlay-label').textContent = 'Eliminando fondo...';
+    var cleanB64 = await removeBackground(b64);
+    hideCapturePreview();
+    setPhotoPreview(cleanB64);
+    capturedPhotoB64 = cleanB64;
+    setStatus('Listo','detected');
+
+  } catch(e) {
+    console.error('Claude error:', e);
+    hideCapturePreview();
+    if (capturedPhotoB64) setPhotoPreview(capturedPhotoB64);
+    setStatus('Introduce datos manualmente','');
+    document.getElementById('f-nombre').focus();
+  }
+}
+
+// ELIMINAR FONDO via Claude - devuelve imagen recortada sobre fondo blanco
+async function removeBackground(b64) {
+  if (!getClaudeKey()) return b64;
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':getClaudeKey(),'anthropic-version':'2023-06-01'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:100,
+        messages:[{
+          role:'user',
+          content:[
+            { type:'image', source:{type:'base64',media_type:'image/jpeg',data:b64} },
+            { type:'text', text:'Localiza el producto sanitario en la imagen. Responde SOLO con un JSON sin backticks: {"x_pct":0.2,"y_pct":0.1,"w_pct":0.6,"h_pct":0.8} donde los valores son las coordenadas del bounding box del objeto (0.0 a 1.0, siendo 0,0 la esquina superior izquierda).' }
+          ]
+        }]
+      })
+    });
+    var data = await res.json();
+    var text = (data.content && data.content[0] ? data.content[0].text : '').replace(/```json|```/g,'').trim();
+    var bbox = JSON.parse(text);
+    return cropToObject(b64, bbox);
+  } catch(e) {
+    console.warn('removeBackground failed, using original:', e);
+    return b64;
+  }
+}
+
+// Recorta la imagen al bounding box devuelto por Claude y añade fondo blanco
+function cropToObject(b64, bbox) {
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      var pad = 0.05;
+      var x = Math.max(0, (bbox.x_pct - pad)) * img.width;
+      var y = Math.max(0, (bbox.y_pct - pad)) * img.height;
+      var w = Math.min(1, (bbox.w_pct + pad*2)) * img.width;
+      var h = Math.min(1, (bbox.h_pct + pad*2)) * img.height;
+      // Ajuste para no salirse de bordes
+      if (x + w > img.width)  w = img.width - x;
+      if (y + h > img.height) h = img.height - y;
+      var size = 280;
+      var canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+      // Calcular posicion centrada manteniendo aspect ratio
+      var aspect = w / h;
+      var drawW, drawH, dx, dy;
+      if (aspect >= 1) { drawW = size; drawH = size/aspect; dx = 0; dy = (size-drawH)/2; }
+      else             { drawH = size; drawW = size*aspect; dy = 0; dx = (size-drawW)/2; }
+      ctx.drawImage(img, x, y, w, h, dx, dy, drawW, drawH);
+      resolve(canvas.toDataURL('image/jpeg', 0.75).split(',')[1]);
+    };
+    img.onerror = function() { resolve(b64); };
+    img.src = 'data:image/jpeg;base64,' + b64;
+  });
+}
+
+// PHOTO MODE
+async function startPhotoCamera() {
+  setStatus('Iniciando camara...','');
+  try {
+    photoStream = await navigator.mediaDevices.getUserMedia({ video:{facingMode:'environment',width:{ideal:1280}} });
+    document.getElementById('photo-video').srcObject = photoStream;
+    setStatus('Encuadra y captura','');
+  } catch(e) { setStatus('Sin acceso a camara',''); switchMode('manual'); }
+}
+
+function stopCamera() {
+  if (photoStream) { photoStream.getTracks().forEach(function(t){ t.stop(); }); photoStream=null; }
+}
+
+async function capturePhoto() {
+  var video=document.getElementById('photo-video');
+  var canvas=document.getElementById('photo-canvas');
+  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  canvas.getContext('2d').drawImage(video,0,0);
+  var b64=canvas.toDataURL('image/jpeg',0.82).split(',')[1];
+  if (getClaudeKey()) {
+    capturedPhotoB64 = b64;  // temporal hasta que IA devuelva la recortada
+    showCapturePreview(b64,'Analizando con IA...');
+    setStatus('Identificando...','analyzing');
+    await identifyWithClaude(b64, null);
+  } else {
+    capturedPhotoB64 = b64;
+    setPhotoPreview(b64);
+    setStatus('Foto capturada','detected');
+    document.getElementById('f-nombre').focus();
+  }
+}
+
+// PREVIEW HELPERS
+function showCapturePreview(b64, label) {
+  document.getElementById('capture-img').src = 'data:image/jpeg;base64,' + b64;
+  document.getElementById('ai-overlay-label').textContent = label;
+  document.getElementById('capture-preview').style.display = 'block';
+}
+function hideCapturePreview() { document.getElementById('capture-preview').style.display = 'none'; }
+function setPhotoPreview(b64) {
+  var wrap = document.getElementById('foto-preview-wrap');
+  document.getElementById('foto-preview-img').src = 'data:image/jpeg;base64,' + b64;
+  wrap.classList.add('visible');
+}
+function clearFoto() {
+  capturedPhotoB64 = null;
+  document.getElementById('foto-preview-wrap').classList.remove('visible');
+  document.getElementById('foto-preview-img').src = '';
+}
+
+// CATEGORIA SELECTOR
+function selectCat(cat, el) {
+  selectedCat = cat;
+  document.querySelectorAll('.cat-opt').forEach(function(o){ o.className = 'cat-opt'; });
+  el.className = 'cat-opt selected ' + cat;
+}
+function selectCatByKey(cat) {
+  selectedCat = cat;
+  document.querySelectorAll('.cat-opt').forEach(function(o){
+    var c = o.getAttribute('data-c');
+    o.className = c === cat ? 'cat-opt selected ' + cat : 'cat-opt';
+  });
+}
+
+// FILTRO CATEGORIA
+function setCatFilter(cat, el) {
+  activeCatFilter = cat;
+  document.querySelectorAll('.cat-pill').forEach(function(p){ p.classList.remove('active'); });
+  el.classList.add('active');
+  renderList();
+}
+
+// GUARDAR
+async function saveItem() {
+  var nombre   = document.getElementById('f-nombre').value.trim();
+  var cantidad = document.getElementById('f-cantidad').value.trim();
+  var desc     = document.getElementById('f-descripcion').value.trim();
+  var ubicacion= document.getElementById('f-ubicacion').value.trim();
+  var caducidad= document.getElementById('f-caducidad').value.trim();
+  if (!nombre)   { showToast('El nombre es obligatorio','error'); return; }
+  if (!cantidad) { showToast('La cantidad es obligatoria','error'); return; }
+
+  var item = {
+    ID: 'TES-' + Date.now().toString(36).toUpperCase(),
+    Nombre: nombre, Descripcion: desc, Categoria: selectedCat,
+    Cantidad: cantidad, Caducidad: caducidad, Ubicacion: ubicacion,
+    Codigo: document.getElementById('barcode-info').style.display !== 'none'
+            ? document.getElementById('barcode-value').textContent : '',
+    Timestamp: new Date().toLocaleString('es-ES'),
+    Autor: usuarioActual,
+    _row: ITEMS.length + 2,
+    _photoUrl: '',
+    _photo: ''
+  };
+
+  // Subir foto a Drive
+  if (capturedPhotoB64) {
+    showLoading('Subiendo foto a Google Drive...');
+    try {
+      var fname = 'almacen_' + item.ID + '.jpg';
+      var driveRes = await uploadPhotoToDrive(capturedPhotoB64, fname);
+      item._photoUrl = driveRes.url;
+      item._photo    = driveRes.url;
+      console.log('Drive OK:', driveRes.url);
+    } catch(driveErr) {
+      console.error('Drive error:', driveErr);
+      // Fallback: guardar miniatura base64 comprimida en Sheet si Drive falla
+      try {
+        item._photo = compressForSheet(capturedPhotoB64);
+        item._photoUrl = '';
+      } catch(e2) { item._photo = ''; }
+      showToast('Drive no disponible - guardando sin foto en Drive', 'error');
+    }
+  }
+
+  showLoading('Guardando en Google Sheets...');
+  try {
+    await appendItemToSheet(item);
+    ITEMS.push(item);
+    renderList(); updateStats();
+    setSyncOk('Guardado');
+    showToast('Guardado' + (item._photoUrl ? ' con foto' : '') + ' por ' + usuarioActual, 'success');
+    closeScanModal();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+    setSyncError('Error al guardar');
+  }
+  hideLoading();
+}
+
+// RENDER
+function renderList() {
+  var list=document.getElementById('item-list'), empty=document.getElementById('empty-state');
+  var query=(document.getElementById('search-input') ? document.getElementById('search-input').value : '').toLowerCase();
+  list.querySelectorAll('.item-card').forEach(function(el){ el.remove(); });
+  var filtered = ITEMS.filter(function(it) {
+    var catOk = activeCatFilter === 'todos' || it.Categoria === activeCatFilter;
+    var qOk   = !query || (it.Nombre && it.Nombre.toLowerCase().indexOf(query)>=0) ||
+                (it.Codigo && it.Codigo.toLowerCase().indexOf(query)>=0) ||
+                (it.Ubicacion && it.Ubicacion.toLowerCase().indexOf(query)>=0) ||
+                (it.Descripcion && it.Descripcion.toLowerCase().indexOf(query)>=0);
+    return catOk && qOk;
+  });
+  if (!filtered.length) { empty.style.display='flex'; return; }
+  empty.style.display='none';
+  var today=new Date();
+  filtered.forEach(function(item,idx) {
+    var es = getExpiryStatus(item.Caducidad, today);
+    var cat = item.Categoria || 'gris';
+    var card = document.createElement('div');
+    card.className = 'item-card' + (es==='expired'?' expired':es==='expiring'?' expiring':'');
+    card.setAttribute('data-cat', cat);
+    card.style.animationDelay = (idx*0.04)+'s';
+    var imgSrc = item._photo
+      ? (item._photo.indexOf('http')===0 ? item._photo : 'data:image/jpeg;base64,'+item._photo)
+      : null;
+    var thumb = imgSrc
+      ? '<div class="item-thumb"><img src="'+imgSrc+'" alt="" loading="lazy"></div>'
+      : '<div class="item-thumb">'+getCategoryEmoji(item.Nombre, cat)+'</div>';
+    var expiryTag = item.Caducidad
+      ? '<span class="tag '+(es==='expired'?'danger':es==='expiring'?'warn':'ok')+'">'+item.Caducidad+'</span>' : '';
+    var locTag = item.Ubicacion ? '<span class="tag">'+item.Ubicacion+'</span>' : '';
+    var catName = CATS[cat] ? CATS[cat].label : 'Otros';
+    card.innerHTML = thumb +
+      '<div class="item-info">' +
+        '<div class="item-name">'+item.Nombre+'</div>' +
+        (item.Descripcion ? '<div class="item-desc">'+item.Descripcion+'</div>' : '') +
+        '<div class="item-meta">'+locTag+expiryTag+'</div>' +
+      '</div>' +
+      '<div class="item-right">' +
+        '<div class="item-qty">'+item.Cantidad+'<span> ud</span></div>' +
+        '<span class="cat-badge '+cat+'">'+catName+'</span>' +
+      '</div>';
+    var capturedIndex = ITEMS.indexOf(item);
+    card.onclick = function(){ showDetail(capturedIndex); };
+    list.appendChild(card);
+  });
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = ITEMS.length;
+  document.getElementById('stat-stock').textContent = ITEMS.reduce(function(s,i){ return s+(parseInt(i.Cantidad)||0); },0);
+  var today=new Date();
+  document.getElementById('stat-exp').textContent = ITEMS.filter(function(i){
+    var s=getExpiryStatus(i.Caducidad,today); return s==='expiring'||s==='expired';
+  }).length;
+}
+
+function filterItems() { renderList(); }
+
+function getExpiryStatus(cad,today) {
+  if (!cad) return 'none';
+  var p=cad.split('/'); if(p.length<2) return 'none';
+  var exp=new Date(parseInt(p[1]),parseInt(p[0]),0);
+  var d=(exp-today)/86400000;
+  return d<0?'expired':d<90?'expiring':'ok';
+}
+
+function getCategoryEmoji(name, cat) {
+  if (cat==='rojo') return '&#x1F489;';
+  if (cat==='azul') return '&#x1FAC1;';
+  if (cat==='amarillo') return '&#x1F476;';
+  if (!name) return '&#x1F4E6;';
+  var n=name.toLowerCase();
+  if (n.indexOf('mascarilla')>=0||n.indexOf('ffp')>=0) return '&#x1F637;';
+  if (n.indexOf('guante')>=0) return '&#x1F9E4;';
+  if (n.indexOf('venda')>=0||n.indexOf('gasa')>=0) return '&#x1FA79;';
+  if (n.indexOf('dea')>=0||n.indexOf('desfibrilador')>=0) return '&#x26A1;';
+  if (n.indexOf('collarín')>=0||n.indexOf('inmoviliz')>=0) return '&#x1F9B4;';
+  if (n.indexOf('tensiómetro')>=0) return '&#x1FA7A;';
+  return '&#x1F4E6;';
+}
+
+// DETAIL
+function showDetail(index) {
+  var item=ITEMS[index], today=new Date(), es=getExpiryStatus(item.Caducidad,today);
+  var cat = item.Categoria || 'gris';
+  var catInfo = CATS[cat] || CATS.gris;
+  var imgSrc = item._photo
+    ? (item._photo.indexOf('http')===0 ? item._photo : 'data:image/jpeg;base64,'+item._photo)
+    : null;
+  var thumbHtml = imgSrc
+    ? '<img src="'+imgSrc+'" alt="">'
+    : '<span style="font-size:44px">'+getCategoryEmoji(item.Nombre,cat)+'</span>';
+  var expColor = es==='expired'?'var(--red)':es==='expiring'?'var(--warn)':'var(--accent2)';
+  document.getElementById('detail-body').innerHTML =
+    '<div class="detail-thumb" style="background:var(--surface2)">'+thumbHtml+'</div>' +
+    '<div class="detail-cat-bar '+cat+'"></div>' +
+    '<div class="detail-grid">' +
+      '<div class="detail-field full"><div class="detail-field-lbl">Nombre</div><div class="detail-field-val">'+item.Nombre+'</div></div>' +
+      (item.Descripcion ? '<div class="detail-field full"><div class="detail-field-lbl">Descripcion</div><div class="detail-field-val" style="font-size:0.8rem;font-weight:400;font-family:var(--font-mono)">'+item.Descripcion+'</div></div>' : '') +
+      '<div class="detail-field"><div class="detail-field-lbl">Categoria</div><div class="detail-field-val"><span class="cat-badge '+cat+'">'+catInfo.label+'</span></div></div>' +
+      '<div class="detail-field"><div class="detail-field-lbl">Cantidad</div><div class="detail-field-val" style="color:var(--accent)">'+item.Cantidad+' ud</div></div>' +
+      '<div class="detail-field"><div class="detail-field-lbl">Ubicacion</div><div class="detail-field-val">'+(item.Ubicacion||'-')+'</div></div>' +
+      '<div class="detail-field"><div class="detail-field-lbl">Caducidad</div><div class="detail-field-val" style="color:'+expColor+'">'+(item.Caducidad||'-')+'</div></div>' +
+      '<div class="detail-field"><div class="detail-field-lbl">Codigo</div><div class="detail-field-val" style="font-family:var(--font-mono);font-size:0.72rem">'+(item.Codigo||'-')+'</div></div>' +
+      '<div class="detail-field"><div class="detail-field-lbl">Registrado por</div><div class="detail-field-val">'+(item.Autor||'-')+'</div></div>' +
+    '</div>';
+  document.getElementById('delete-btn').onclick = function(){ if(confirm('Eliminar "'+item.Nombre+'"?')) deleteItem(index); };
+  document.getElementById('edit-btn').onclick = function(){ editItem(index); };
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function closeDetailModal() { document.getElementById('detail-modal').classList.remove('open'); }
+
+async function deleteItem(index) {
+  var item=ITEMS[index]; showLoading('Eliminando...');
+  try {
+    await deleteItemFromSheet(item._row);
+    ITEMS.splice(index,1);
+    ITEMS.forEach(function(it){ if(it._row>item._row) it._row--; });
+    renderList(); updateStats(); showToast('Eliminado','success'); setSyncOk('Actualizado');
+  } catch(e) { showToast('Error: '+e.message,'error'); }
+  hideLoading(); closeDetailModal();
+}
+
+function editItem(index) {
+  var item=ITEMS[index]; closeDetailModal(); openScanModal();
+  setTimeout(function(){
+    switchMode('manual');
+    document.getElementById('f-nombre').value = item.Nombre;
+    document.getElementById('f-descripcion').value = item.Descripcion||'';
+    document.getElementById('f-cantidad').value = item.Cantidad;
+    document.getElementById('f-ubicacion').value = item.Ubicacion||'';
+    document.getElementById('f-caducidad').value = item.Caducidad||'';
+    selectCatByKey(item.Categoria||'gris');
+    if (item._photo) { setPhotoPreview(item._photo); capturedPhotoB64=item._photo; }
+  }, 100);
+}
+
+// UTILS
+function clearForm() {
+  ['f-nombre','f-descripcion','f-cantidad','f-ubicacion','f-caducidad'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('barcode-info').style.display='none';
+  document.getElementById('barcode-value').textContent='-';
+  document.getElementById('ai-result-bar').classList.remove('visible');
+  clearFoto(); hideCapturePreview();
+  lastBarcode=''; selectedCat='gris';
+  selectCatByKey('gris');
+}
+function setStatus(msg,cls) { var el=document.getElementById('camera-status'); el.textContent=msg; el.className='camera-status '+(cls||''); }
+function showToast(msg,type) {
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+(type||'');
+  t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); },3000);
+}
+function showLoading(msg) { document.getElementById('loading-text').textContent=msg||'Procesando...'; document.getElementById('loading-overlay').classList.add('show'); }
+function hideLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
+</script>
+</body>
+</html>
